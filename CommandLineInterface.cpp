@@ -7,9 +7,9 @@ void CommandLineInterface::displayGame(const GameBoard& game, int difficulty) co
 
 void CommandLineInterface::displayMainMenu() const {
     std::cout << "Welcome to Sokoban!\n";
-    std::cout << "1. Easy\n";
-    std::cout << "2. Medium\n";
-    std::cout << "3. Hard\n";
+    std::cout << "1. Level 1\n";
+    std::cout << "2. Level 2\n";
+    std::cout << "3. Level 3\n";
     std::cout << "E. Exit\n";
-    std::cout << "Select difficulty (1-3): ";
+    std::cout << "Select level : ";
 }
