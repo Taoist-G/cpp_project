@@ -13,6 +13,7 @@ public:
 
 private:
     bool isValidMove;
+    bool isEnter;
     std::vector<std::string> mapNames;
     std::vector<std::vector<std::vector<std::vector<std::string>>>> levels;
     std::vector<std::vector<std::vector<std::string>>> boards;
