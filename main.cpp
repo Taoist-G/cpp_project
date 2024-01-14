@@ -16,13 +16,16 @@ int main() {
 
         switch (menuChoice) {
             case '1':
-                playGame(0);
-                break;
-            case '2':
                 playGame(1);
                 break;
-            case '3':
+            case '2':
                 playGame(2);
+                break;
+            case '3':
+                playGame(3);
+                break;
+            case '4':
+                playGame(4);
                 break;
             case 'E':
             case 'e':

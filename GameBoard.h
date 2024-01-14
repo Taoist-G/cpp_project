@@ -14,6 +14,7 @@ public:
 private:
     bool isValidMove;
     bool isEnter;
+    bool isLeave;
     std::vector<std::string> mapNames;
     std::vector<std::vector<std::vector<std::vector<std::string>>>> levels;
     std::vector<std::vector<std::vector<std::string>>> boards;
@@ -25,7 +26,7 @@ private:
 
     void initializeBoard(int choice);
     void moveBox(char direction, int oldMap, int oldRow, int oldCol, int newMap, int newRow, int newCol);
-    void enterInternalBox(char direction, int oldRow, int oldCol, int boxId, int boxRow, int boxCol);
+    void enterInternalBox(char direction, int oldRow, int oldCol, int oldMap, int boxRow, int boxCol);
     void leaveInternalBox(char direction, int newMap, int newRow, int newCol);
     void moveInternalBox(char direction, int oldMap, int oldRow, int oldCol, int newMap, int newRow, int newCol);
     void repaintDest();

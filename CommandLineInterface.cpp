@@ -10,6 +10,7 @@ void CommandLineInterface::displayMainMenu() const {
     std::cout << "1. Level 1\n";
     std::cout << "2. Level 2\n";
     std::cout << "3. Level 3\n";
+    std::cout << "4. Level 4\n";
     std::cout << "E. Exit\n";
     std::cout << "Select level : ";
 }
