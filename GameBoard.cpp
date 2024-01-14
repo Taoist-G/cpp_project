@@ -11,9 +11,7 @@ GameBoard::GameBoard(int difficulty) {
 }
 
 void GameBoard::initializeBoard(int difficulty) {
-    // #是墙  P是玩家  =是玩家的目的地  当玩家位于玩家目的地上时会变为p  B是箱子  -是箱子的目的地  当箱子位于箱子目的地上时变为b
-    // In是含有内部结构的箱子 n=1,2,3...   当含有内部结构的箱子位于目的地上变为in
-    // 创建地图时如果有In,n就对应该箱子内部结构的地图的序号，后面检索地图时使用I后面的n来检索地图的,如I1箱子的内部结构的地图放在第二个
+
 //    levels = {
 //            {
 //                    {
@@ -185,7 +183,10 @@ void GameBoard::initializeBoard(int difficulty) {
                     {".", "-", "#"}
             },
     };
-
+    // 地图上标志的含义
+    // #是墙  P是玩家  =是玩家的检测点  当玩家位于玩家检测点上时会变为p  B是箱子  -是箱子的检测点  当箱子位于箱子检测点上时变为b
+    // In是含有内部结构的箱子 n=1,2,3...   当含有内部结构的箱子位于检测点上变时为in  n=1,2,3...
+    // 创建地图时如果有In,n就对应该箱子内部结构的地图的序号，后面检索地图时使用I/i后面的n来检索地图的,如I1箱子的内部结构的地图放在第二个
 
     destinations.clear();
     contains.clear();
@@ -194,6 +195,7 @@ void GameBoard::initializeBoard(int difficulty) {
     // 第三第四个元素是第二个元素对应地图在第一个元素对应地图中的行和列
     switch (difficulty) {
         case 1:
+            // Internal Structures
             boards = boards1;
             contains.emplace_back(2,1,2,2);
             contains.emplace_back(1,2,2,2);
@@ -204,21 +206,19 @@ void GameBoard::initializeBoard(int difficulty) {
             contains.emplace_back(0,2,3,3);
             break;
         case 3:
+            // Greedy Snake
             boards = boards3;
             contains.emplace_back(1,1,1,1);
             contains.emplace_back(1,2,1,4);
             contains.emplace_back(1,3,1,5);
             break;
         case 4:
+            // Recursive Box
             boards = boards4;
             contains.emplace_back(1,2,1,1);
             contains.emplace_back(1,3,1,2);
             break;
     }
-
-
-
-
 
     for (int i = 0; i < boards.size(); ++i) {
         for (int row = 0; row < boards[i].size(); ++row) {
@@ -241,7 +241,8 @@ void GameBoard::initializeBoard(int difficulty) {
     }
 }
 
-//遍历所有地图检测点，如果没有箱子或玩家，则在地图上重新打印检测点
+
+// 遍历所有地图检测点，如果没有箱子或玩家，则在地图上重新打印检测点
 void GameBoard::repaintDest(){
     for (auto & destination : destinations) {
         if (boards[std::get<0>(destination)][std::get<1>(destination)][std::get<2>(destination)] != "b"
@@ -260,8 +261,9 @@ void GameBoard::repaintDest(){
 }
 
 
-//oldMap是“推动者”所在的地图,oldRow和oldCol是“推动者”的位置,newMap是“被推者”所在的地图,newRow和newCol是“被推者”的位置
-//在这个函数中我们移动的是原本位于newMap上newRow和newCol位置上的普通箱子,移动到newBoxMap上newBoxRow和newBoxCol位置
+// oldMap是“推动者”所在的地图,oldRow和oldCol是“推动者”的位置,newMap是“被推者”所在的地图,newRow和newCol是“被推者”的位置
+// 在这个函数中我们移动的是原本位于newMap上newRow和newCol位置上的普通箱子,移动到newBoxMap上newBoxRow和newBoxCol位置
+// direction表示推动的方向，newBoxMap,newBoxRow和newBoxCol会在函数中根据direction计算出来
 void GameBoard::moveBox(char direction, int oldMap, int oldRow, int oldCol, int newMap, int newRow, int newCol) {
     int newBoxMap = newMap;
     int newBoxRow = newRow;
@@ -280,19 +282,20 @@ void GameBoard::moveBox(char direction, int oldMap, int oldRow, int oldCol, int 
             newBoxCol++;
             break;
     }
-    //检测箱子被推到的位置是否出界或撞墙
+    // 检测箱子被推到的位置是否出界或撞墙
     if (newBoxRow >= 0 && newBoxRow < boards[newBoxMap].size() &&
         newBoxCol >= 0 && newBoxCol < boards[newBoxMap][0].size() &&
         boards[newBoxMap][newBoxRow][newBoxCol] != "#") {
 
         // 如果箱子移动方向紧挨着另一个箱子
-        // 递归判断另一个箱子是否能移动，如果能则移动，不能将isValidMove设为false
+        // 递归判断另一个箱子是否能移动，如果能则移动，不能将isValidMove设为false，表示前一个箱子不能移动
+
         // 要移动到的位置上的箱子是普通箱子
         if (boards[newBoxMap][newBoxRow][newBoxCol] == "B" || boards[newBoxMap][newBoxRow][newBoxCol] == "b") {
             moveBox(direction, newMap, newRow, newCol, newBoxMap, newBoxRow, newBoxCol);
-            //前一个箱子可以向前移动
+            // 前一个位于newBoxMap上的newBoxRow和newBoxCol位置的普通箱子可以向前移动
             if (isValidMove) {
-                // 移动箱子
+                // 移动位于newMap中位于newRow和newCol上的普通箱子到newBoxMap上的newBoxRow和newBoxCol位置
                 if (boards[newBoxMap][newBoxRow][newBoxCol] == "-") {
                     boards[newBoxMap][newBoxRow][newBoxCol] = "b";
                 } else {
@@ -305,8 +308,10 @@ void GameBoard::moveBox(char direction, int oldMap, int oldRow, int oldCol, int 
         // 要移动到的位置上的箱子是有内部结构的箱子
         else if (boards[newBoxMap][newBoxRow][newBoxCol].substr(0,1) == "I" || boards[newBoxMap][newBoxRow][newBoxCol].substr(0,1) == "i") {
             moveInternalBox(direction, newMap, newRow, newCol, newBoxMap, newBoxRow, newBoxCol);
+            // 前面位于newBoxMap上的newBoxRow和newBoxCol位置的有内部结构的箱子可以向前移动
+            // 并且当前箱子没有进入前一个有内部结构的箱子(在moveInternalBox中会判断当前现在箱子是否可以进入前面有内部结构的箱子，如果可以会执行进入)
             if (isValidMove && !isEnter) {
-                // 移动箱子
+                // 移动位于newMap中位于newRow和newCol上的普通箱子到newBoxMap上的newBoxRow和newBoxCol位置
                 if (boards[newBoxMap][newBoxRow][newBoxCol] == "-") {
                     boards[newBoxMap][newBoxRow][newBoxCol] = "b";
                 } else {
@@ -321,7 +326,7 @@ void GameBoard::moveBox(char direction, int oldMap, int oldRow, int oldCol, int 
         }
         // 箱子移动方向为空地或检测点
         else {
-            // 移动箱子
+            // 移动位于newMap中位于newRow和newCol上的普通箱子到newBoxMap上的newBoxRow和newBoxCol位置
             if (boards[newBoxMap][newBoxRow][newBoxCol] == "-") {
                 boards[newBoxMap][newBoxRow][newBoxCol] = "b";
             } else {
@@ -331,6 +336,7 @@ void GameBoard::moveBox(char direction, int oldMap, int oldRow, int oldCol, int 
             repaintDest();
         }
     } else {
+        // 箱子被推到的位置出界，检测能否离开有内部结构的箱子(如果在一个有内部结构的箱子内部的话)
         if (newBoxRow < 0 || newBoxRow >= boards[newBoxMap].size() ||
             newBoxCol < 0 || newBoxCol >= boards[newBoxMap][0].size()){
             leaveInternalBox(direction, newMap, newRow, newCol);
@@ -342,15 +348,15 @@ void GameBoard::moveBox(char direction, int oldMap, int oldRow, int oldCol, int 
 }
 
 
-// oldRow和oldCol是要进入有内部结构的箱子的玩家或箱子的原本位置,boxMap是移动前的地图,
-// 也就是箱子所在的地图(不是箱子本身对应的地图，是包含箱子的那个地图),boxRow和boxCol是有内部结构的箱子在包含箱子的地图中的行和列
+// oldRow和oldCol是要进入有内部结构的箱子的玩家或箱子的原本位置,oldMap是要进入有内部结构的箱子的玩家或箱子原来所在的地图
+// 也就是玩家或箱子所在的地图(不是箱子本身对应的地图，是包含箱子的那个地图),boxRow和boxCol是要进入的有内部结构的箱子在包含箱子的地图(oldMap)中的行和列
 void GameBoard::enterInternalBox(char direction, int oldRow, int oldCol, int oldMap, int boxRow, int boxCol){
-    //boxId是获取有内部结构箱子的序号，用来找到对应的地图
+    // boxId是获取有内部结构箱子的序号，用来找到对应的地图，r和c是进入有内部结构的箱子之后的位置
     this->isValidMove = true;
     int boxId;
     int r, c;
     // 根据是否离开一个有内部结构的箱子进入另一个有内部结构的箱子，判断boxId是oldMap还是包含oldMap的地图的序号
-    // 并且进入另一个有内部结构的箱子的位置也需要调整
+    // 并且进入另一个有内部结构的箱子的位置也需要调整，针对文档中Recursive Box的情况进行特判
     if (isLeave){
         int containMap;
         for (auto& tuple : contains) {
@@ -358,9 +364,10 @@ void GameBoard::enterInternalBox(char direction, int oldRow, int oldCol, int old
                 containMap = std::get<0>(tuple);
             }
         }
+        // boxId此时为包含oldMap的地图的序号
         boxId = std::stoi(boards[containMap][boxRow][boxCol].substr(1, 2));
         isLeave = false;
-        //计算从不同方向进入后，对应的进入后的位置
+        // 计算从不同方向进入后，对应的进入后的位置
         switch (direction) {
             case 'W': {
                 r = boards[boxId].size() - 1;
@@ -384,8 +391,9 @@ void GameBoard::enterInternalBox(char direction, int oldRow, int oldCol, int old
             }
         }
     } else {
+        // boxId此时为oldMap本身地图的序号
         boxId = std::stoi(boards[oldMap][boxRow][boxCol].substr(1, 2));
-        //计算从不同方向进入后，对应的进入后的位置
+        // 计算从不同方向进入后，对应的进入后的位置
         switch (direction) {
             case 'W': {
                 r = boards[boxId].size() - 1;
@@ -410,12 +418,11 @@ void GameBoard::enterInternalBox(char direction, int oldRow, int oldCol, int old
         }
     }
 
-
-    //判断能否进入
+    // 判断能否进入有内部结构的箱子
     if (boards[boxId][r][c] != "#") {
-        //内部箱子边缘入口处是空地或检测点
+        // 内部箱子边缘入口处是空地或检测点
         if (boards[boxId][r][c] == "." || boards[boxId][r][c] == "-" || boards[boxId][r][c] == "=") {
-            //进来的是玩家
+            // 进来的是玩家
             if (boards[oldMap][oldRow][oldCol] == "P" || boards[oldMap][oldRow][oldCol] == "p") {
                 if (boards[boxId][r][c] == "=") {
                     boards[boxId][r][c] = "p";
@@ -431,7 +438,7 @@ void GameBoard::enterInternalBox(char direction, int oldRow, int oldCol, int old
                 isEnter = true;
                 boards[oldMap][oldRow][oldCol] = ".";
             }
-            //进来的是普通箱子
+            // 进来的是普通箱子
             else if (boards[oldMap][oldRow][oldCol] == "B" || boards[oldMap][oldRow][oldCol] == "b") {
                 if (boards[boxId][r][c] == "-") {
                     boards[boxId][r][c] = "b";
@@ -441,7 +448,7 @@ void GameBoard::enterInternalBox(char direction, int oldRow, int oldCol, int old
                 boards[oldMap][oldRow][oldCol] = ".";
                 isEnter = true;
             }
-            //进来的是有内部结构的箱子，更改进来的有内部结构的箱子对应的包含关系和位置信息
+            // 进来的是有内部结构的箱子，更改进来的有内部结构的箱子对应的包含关系和位置信息
             else if (boards[oldMap][oldRow][oldCol].substr(0, 1) == "I" || boards[oldMap][oldRow][oldCol].substr(0, 1) == "i") {
                 if (boards[boxId][r][c] == "-") {
                     boards[boxId][r][c] = "i" + boards[oldMap][oldRow][oldCol].substr(1);
@@ -466,9 +473,9 @@ void GameBoard::enterInternalBox(char direction, int oldRow, int oldCol, int old
                 boards[oldMap][oldRow][oldCol] = ".";
             }
         }
-        //内部箱子边缘入口处是普通箱子
+        // 内部箱子边缘入口处是普通箱子
         else if (boards[boxId][r][c] == "B" || boards[boxId][r][c] == "b") {
-            //进来的是玩家
+            // 进来的是玩家
             if (boards[oldMap][oldRow][oldCol] == "P" || boards[oldMap][oldRow][oldCol] == "p") {
                 moveBox(direction, oldMap , oldRow, oldCol, boxId, r, c);
                 boards[boxId][r][c] = boards[oldMap][oldRow][oldCol];
@@ -478,7 +485,7 @@ void GameBoard::enterInternalBox(char direction, int oldRow, int oldCol, int old
                 playerCol = c;
                 isEnter = true;
             }
-            //进来的是普通箱子或有内部结构的箱子
+            // 进来的是普通箱子或有内部结构的箱子
             else if (boards[oldMap][oldRow][oldCol] == "B" || boards[oldMap][oldRow][oldCol] == "b" ||
                      boards[oldMap][oldRow][oldCol].substr(0, 1) == "I" || boards[oldMap][oldRow][oldCol].substr(0, 1) == "i") {
                 moveBox(direction, oldMap, oldRow, oldCol, boxId, r, c);
@@ -491,9 +498,9 @@ void GameBoard::enterInternalBox(char direction, int oldRow, int oldCol, int old
                 boards[oldMap][oldRow][oldCol] = ".";
             }
         }
-        //内部箱子边缘入口处是含有内部结构的箱子
+        // 内部箱子边缘入口处是含有内部结构的箱子
         else if (boards[boxId][r][c].substr(0, 1) == "I") {
-            //进来的是玩家
+            // 进来的是玩家
             if (boards[oldMap][oldRow][oldCol] == "P" || boards[oldMap][oldRow][oldCol] == "p") {
                 moveInternalBox(direction, oldMap , oldRow, oldCol, boxId, r, c);
                 boards[boxId][r][c] = boards[oldMap][oldRow][oldCol];
@@ -503,7 +510,7 @@ void GameBoard::enterInternalBox(char direction, int oldRow, int oldCol, int old
                 playerCol = c;
                 isEnter = true;
             }
-            //进来的是普通箱子或有内部结构的箱子
+            // 进来的是普通箱子或有内部结构的箱子
             else if (boards[oldMap][oldRow][oldCol] == "B" || boards[oldMap][oldRow][oldCol] == "b" ||
                      boards[oldMap][oldRow][oldCol].substr(0, 1) == "I" || boards[oldMap][oldRow][oldCol].substr(0, 1) == "i") {
                 moveInternalBox(direction, oldMap, oldRow, oldCol, boxId, r, c);
@@ -521,7 +528,7 @@ void GameBoard::enterInternalBox(char direction, int oldRow, int oldCol, int old
 }
 
 
-// oldMap是有内部结构的箱子对应的地图(就是自己本身的地图),newMap是包含有内部结构的箱子的地图,
+// oldMap是有内部结构的箱子对应的地图(就是自己本身的地图)序号,newMap是包含有内部结构的箱子的地图,
 // oldRow和oldCol是玩家或箱子原本在有内部结构的箱子中的位置,newRow和newCol是玩家或箱子走出有内部结构的箱子之后的位置
 void GameBoard::leaveInternalBox(char direction, int oldMap, int oldRow, int oldCol) {
     int newMap;
@@ -529,10 +536,11 @@ void GameBoard::leaveInternalBox(char direction, int oldMap, int oldRow, int old
     int newCol;
 
     isLeave = true;
-    //遍历contains，检索并计算走出之后的地图和在地图中的位置，并进行移动
+    // 遍历contains，检索并计算走出之后的地图和在地图中的位置，并进行移动
     for (auto& tuple : contains) {
-        //找到了该有内部结构的箱子对应的数据
+        // 找到了该有内部结构的箱子对应的数据
         if (std::get<1>(tuple) == oldMap) {
+            // 获取走出之后新地图的序号和在新地图中的位置
             newMap = std::get<0>(tuple);
             switch (direction) {
                 case 'W':
@@ -552,13 +560,14 @@ void GameBoard::leaveInternalBox(char direction, int oldMap, int oldRow, int old
                     newCol = std::get<3>(tuple) + 1;
                     break;
             }
-            //判断能否走出有内部结构的箱子
+            // 判断能否走出有内部结构的箱子
             if (boards[newMap][newRow][newCol] != "#") {
-
-                //走出后的位置是普通箱子
+                // 走出后的位置是普通箱子
                 if (boards[newMap][newRow][newCol] == "B" || boards[newMap][newRow][newCol] == "b") {
                     moveBox(direction, oldMap, oldRow, oldCol, newMap, newRow, newCol);
+                    // 可以推动走出有内部结构的位置上的普通箱子,走出有内部结构的箱子
                     if (isValidMove){
+                        // 走出去的是玩家
                         if(oldMap == playerMap && oldRow == playerRow && oldCol == playerCol) {
                             if (boards[newMap][newRow][newCol] == "="){
                                 boards[newMap][newRow][newCol] = "p";
@@ -571,7 +580,9 @@ void GameBoard::leaveInternalBox(char direction, int oldMap, int oldRow, int old
                             playerMap = newMap;
                             playerRow = newRow;
                             playerCol = newCol;
-                        } else if (boards[oldMap][oldRow][oldCol].substr(0,1) == "I" || boards[oldMap][oldRow][oldCol].substr(0,1) == "i") {
+                        }
+                        // 出去的是有内部结构的箱子
+                        else if (boards[oldMap][oldRow][oldCol].substr(0,1) == "I" || boards[oldMap][oldRow][oldCol].substr(0,1) == "i") {
                             if (boards[newMap][newRow][newCol] == "-"){
                                 boards[newMap][newRow][newCol] = "i" + boards[oldMap][oldRow][oldCol].substr(1);
                             } else {
@@ -585,7 +596,9 @@ void GameBoard::leaveInternalBox(char direction, int oldMap, int oldRow, int old
                                 }
                             }
                             boards[oldMap][oldRow][oldCol] = ".";
-                        } else {
+                        }
+                        // 出去的是普通箱子
+                        else {
                             if (boards[newMap][newRow][newCol] == "-"){
                                 boards[newMap][newRow][newCol] = "b";
                             } else {
@@ -595,10 +608,12 @@ void GameBoard::leaveInternalBox(char direction, int oldMap, int oldRow, int old
                         }
                     }
                 }
-                //走出后的位置是有内部结构的箱子
+                // 走出后的位置是有内部结构的箱子
                 else if (boards[newMap][newRow][newCol].substr(0, 1) == "I" || boards[newMap][newRow][newCol].substr(0, 1) == "i"){
                     moveInternalBox(direction, oldMap, oldRow, oldCol, newMap, newRow, newCol);
+                    // 可以推动走出有内部结构的位置上的有内部结构的箱子,走出有内部结构的箱子
                     if (isValidMove && !isEnter){
+                        // 走出去的是玩家
                         if(oldMap == playerMap && oldRow == playerRow && oldCol == playerCol) {
                             if (boards[newMap][newRow][newCol] == "="){
                                 boards[newMap][newRow][newCol] = "p";
@@ -611,7 +626,9 @@ void GameBoard::leaveInternalBox(char direction, int oldMap, int oldRow, int old
                             playerMap = newMap;
                             playerRow = newRow;
                             playerCol = newCol;
-                        } else if (boards[oldMap][oldRow][oldCol].substr(0,1) == "I" || boards[oldMap][oldRow][oldCol].substr(0,1) == "i") {
+                        }
+                        // 出去的是有内部结构的箱子
+                        else if (boards[oldMap][oldRow][oldCol].substr(0,1) == "I" || boards[oldMap][oldRow][oldCol].substr(0,1) == "i") {
                             if (boards[newMap][newRow][newCol] == "-"){
                                 boards[newMap][newRow][newCol] = "i" + boards[oldMap][oldRow][oldCol].substr(1);
                             } else {
@@ -625,7 +642,9 @@ void GameBoard::leaveInternalBox(char direction, int oldMap, int oldRow, int old
                                 }
                             }
                             boards[oldMap][oldRow][oldCol] = ".";
-                        } else {
+                        }
+                        // 出去的是普通箱子
+                        else {
                             if (boards[newMap][newRow][newCol] == "-"){
                                 boards[newMap][newRow][newCol] = "b";
                             } else {
@@ -641,6 +660,7 @@ void GameBoard::leaveInternalBox(char direction, int oldMap, int oldRow, int old
                 }
                 //走出后的位置为空地或检测点
                 else {
+                    // 走出去的是玩家
                     if(oldMap == playerMap && oldRow == playerRow && oldCol == playerCol) {
                         if (boards[newMap][newRow][newCol] == "="){
                             boards[newMap][newRow][newCol] = "p";
@@ -653,7 +673,9 @@ void GameBoard::leaveInternalBox(char direction, int oldMap, int oldRow, int old
                         playerMap = newMap;
                         playerRow = newRow;
                         playerCol = newCol;
-                    } else if (boards[oldMap][oldRow][oldCol].substr(0,1) == "I" || boards[oldMap][oldRow][oldCol].substr(0,1) == "i") {
+                    }
+                    // 出去的是有内部结构的箱子
+                    else if (boards[oldMap][oldRow][oldCol].substr(0,1) == "I" || boards[oldMap][oldRow][oldCol].substr(0,1) == "i") {
                         if (boards[newMap][newRow][newCol] == "-"){
                             boards[newMap][newRow][newCol] = "i" + boards[oldMap][oldRow][oldCol].substr(1);
                         } else {
@@ -667,7 +689,9 @@ void GameBoard::leaveInternalBox(char direction, int oldMap, int oldRow, int old
                             }
                         }
                         boards[oldMap][oldRow][oldCol] = ".";
-                    } else {
+                    }
+                    // 出去的是普通箱子
+                    else {
                         if (boards[newMap][newRow][newCol] == "-"){
                             boards[newMap][newRow][newCol] = "b";
                         } else {
@@ -687,9 +711,10 @@ void GameBoard::leaveInternalBox(char direction, int oldMap, int oldRow, int old
 }
 
 
-//oldMap是“推动者”所在的地图,oldRow和oldCol是“推动者”的位置,newMap是“被推者”所在的地图,newRow和newCol是“被推者”的位置
-//在这个函数中我们移动的是原本位于newMap上newRow和newCol位置上的有内部结构的箱子,移动到newBoxMap上newBoxRow和newBoxCol位置
+// oldMap是“推动者”所在的地图,oldRow和oldCol是“推动者”的位置,newMap是“被推者”所在的地图,newRow和newCol是“被推者”的位置
+// 在这个函数中我们移动的是原本位于newMap上newRow和newCol位置上的有内部结构的箱子,移动到newBoxMap上newBoxRow和newBoxCol位置
 void GameBoard::moveInternalBox(char direction, int oldMap, int oldRow, int oldCol, int newMap, int newRow, int newCol) {
+    // 获取位于newMap上newRow和newCol位置上的有内部结构的箱子本身地图的序号,后续用来更新该有内部结构的箱子的数据
     int boxId = std::stoi(boards[newMap][newRow][newCol].substr(1, 2));
     int newBoxMap = newMap;
     int newBoxRow = newRow;
@@ -708,24 +733,26 @@ void GameBoard::moveInternalBox(char direction, int oldMap, int oldRow, int oldC
             newBoxCol++;
             break;
     }
-    //判断新位置是否合法
+    // 判断新位置是否合法
     if (newBoxRow >= 0 && newBoxRow < boards[newBoxMap].size() &&
         newBoxCol >= 0 && newBoxCol < boards[newBoxMap][0].size() &&
         boards[newBoxMap][newBoxRow][newBoxCol] != "#") {
+
         // 如果有内部结构的箱子移动方向紧挨着另一个箱子
         // 递归判断另一个箱子是否能移动，如果能则移动，不能将isValidMove设为false
+
         // 要将该有内部结构的箱子移动到的位置上是普通箱子
         if (boards[newBoxMap][newBoxRow][newBoxCol] == "B" || boards[newBoxMap][newBoxRow][newBoxCol] == "b") {
             moveBox(direction, newMap, newRow, newCol, newBoxMap, newBoxRow, newBoxCol);
-            //普通箱子可以向前移动
+            // 普通箱子可以向前移动
             if (isValidMove) {
-                // 移动箱子
+                // 移动位于newMap中位于newRow和newCol上的有内部结构的箱子到newBoxMap上的newBoxRow和newBoxCol位置
                 if (boards[newBoxMap][newBoxRow][newBoxCol] == "-") {
                     boards[newBoxMap][newBoxRow][newBoxCol] = "i" + boards[newMap][newRow][newCol].substr(1);
                 } else {
                     boards[newBoxMap][newBoxRow][newBoxCol] = "I" + boards[newMap][newRow][newCol].substr(1);
                 }
-                //更新有内部结构的箱子的位置数据
+                // 更新有内部结构的箱子的位置数据
                 for (auto& tuple : contains) {
                     if (std::get<1>(tuple) == boxId) {
                         std::get<2>(tuple) = newBoxRow;
@@ -735,7 +762,7 @@ void GameBoard::moveInternalBox(char direction, int oldMap, int oldRow, int oldC
                 boards[newMap][newRow][newCol] = ".";
                 repaintDest();
             }
-            //普通箱子不能向前移动，判断这个有内部结构的箱子能否“吃掉”普通箱子
+            // 普通箱子不能向前移动，判断这个有内部结构的箱子能否“吃掉”普通箱子
             else {
                 char tempDirection;
                 switch (direction) {
@@ -753,13 +780,14 @@ void GameBoard::moveInternalBox(char direction, int oldMap, int oldRow, int oldC
                         break;
                 }
                 enterInternalBox(tempDirection, newBoxRow, newBoxCol, newMap, newRow, newCol);
+                // 如果可以“吃掉”前面的普通箱子,则向前移动
                 if (isValidMove) {
                     moveInternalBox(direction, oldMap, oldRow, oldCol, newMap, newRow, newCol);
                     isEnter = false;
                 }
                 // “被推者”无法移动，判断“推动者”能否进入“被推者”(也就是有内部结构的箱子)
                 else {
-                    //判断是否可以进入有内部结构的箱子
+                    // 判断是否可以进入有内部结构的箱子
                     if (boards[newMap][newRow][newCol].substr(0, 1) == "I" || boards[newMap][newRow][newCol].substr(0, 1) == "i"){
                         enterInternalBox(direction, oldRow, oldCol, oldMap, newRow, newCol);
                     } else {
@@ -772,10 +800,12 @@ void GameBoard::moveInternalBox(char direction, int oldMap, int oldRow, int oldC
         // 要将该有内部结构的箱子移动到的位置上也是有内部结构的箱子
         else if (boards[newBoxMap][newBoxRow][newBoxCol].substr(0,1) == "I" || boards[newBoxMap][newBoxRow][newBoxCol].substr(0,1) == "i") {
             moveInternalBox(direction, newMap, newRow, newCol, newBoxMap, newBoxRow, newBoxCol);
-            //要移动位置上的箱子是有内部结构的箱子，判断能否被要移动位置上的有内部结构的箱子“吃掉”
-            //不能被要移动位置上的有内部结构的箱子“吃掉”
+
+            // 要移动位置上的箱子是有内部结构的箱子,而且前面的有内部结构的箱子无法移动,判断能否被要移动位置上的有内部结构的箱子“吃掉”
+
+            // 不能被要移动位置上的有内部结构的箱子“吃掉”
             if (!isValidMove) {
-                //尝试能否被“吃掉”要移动位置上的有内部结构的箱子
+                // 尝试能否被“吃掉”要移动位置上的有内部结构的箱子
                 char tempDirection;
                 switch (direction) {
                     case 'W':
@@ -792,11 +822,14 @@ void GameBoard::moveInternalBox(char direction, int oldMap, int oldRow, int oldC
                         break;
                 }
                 enterInternalBox(tempDirection, newBoxRow, newBoxCol, newMap, newRow, newCol);
+                // 可以“吃掉”要移动位置上的有内部结构的箱子,向前移动
                 if (isValidMove) {
                     moveInternalBox(direction, oldMap, oldRow, oldCol, newMap, newRow, newCol);
                 }
-            } else if (isValidMove && !isEnter){
-                // 移动箱子
+            }
+            // 前面要移动位置上的有内部结构的箱子可以移动,并且没有进入前面要移动位置上的有内部结构的箱子
+            else if (isValidMove && !isEnter){
+                // 移动位于newMap中位于newRow和newCol上的有内部结构的箱子到newBoxMap上的newBoxRow和newBoxCol位置
                 if (boards[newBoxMap][newBoxRow][newBoxCol] == "-") {
                     boards[newBoxMap][newBoxRow][newBoxCol] = "i" + boards[newMap][newRow][newCol].substr(1);
                 } else {
@@ -816,9 +849,9 @@ void GameBoard::moveInternalBox(char direction, int oldMap, int oldRow, int oldC
                 isEnter = false;
             }
         }
-        //要移动的位置是空地或检测点
+        // 要移动的位置是空地或检测点
         else {
-            // 移动箱子
+            // 移动位于newMap中位于newRow和newCol上的有内部结构的箱子到newBoxMap上的newBoxRow和newBoxCol位置
             if (boards[newBoxMap][newBoxRow][newBoxCol] == "-") {
                 boards[newBoxMap][newBoxRow][newBoxCol] = "i" + boards[newMap][newRow][newCol].substr(1);
             } else {
@@ -856,7 +889,7 @@ void GameBoard::moveInternalBox(char direction, int oldMap, int oldRow, int oldC
 }
 
 
-//用来实现玩家的移动逻辑
+//玩家的移动逻辑
 void GameBoard::movePlayer(char direction) {
     int newPlayerMap = playerMap;
     int newPlayerRow = playerRow;
@@ -884,7 +917,7 @@ void GameBoard::movePlayer(char direction) {
     isEnter = false;
     isLeave = false;
 
-    // 检查新位置是否合法
+    // 检查玩家要移动的新位置是否合法
     if (newPlayerRow >= 0 && newPlayerRow < boards[newPlayerMap].size() &&
         newPlayerCol >= 0 && newPlayerCol < boards[newPlayerMap][0].size() &&
         boards[newPlayerMap][newPlayerRow][newPlayerCol] != "#") {
@@ -893,6 +926,7 @@ void GameBoard::movePlayer(char direction) {
         if (boards[newPlayerMap][newPlayerRow][newPlayerCol] == "B"
         || boards[newPlayerMap][newPlayerRow][newPlayerCol] == "b") {
             moveBox(direction, playerMap, playerRow, playerCol, newPlayerMap, newPlayerRow, newPlayerCol);
+            // 新位置上的普通箱子可以被推动
             if (isValidMove){
                 // 更新玩家位置
                 if (boards[newPlayerMap][newPlayerRow][newPlayerCol] == "=") {
@@ -912,7 +946,7 @@ void GameBoard::movePlayer(char direction) {
         else if(boards[newPlayerMap][newPlayerRow][newPlayerCol].substr(0,1) == "I"
         || boards[newPlayerMap][newPlayerRow][newPlayerCol].substr(0,1) == "i"){
             moveInternalBox(direction, playerMap, playerRow, playerCol, newPlayerMap, newPlayerRow, newPlayerCol);
-            // 如果可以推动有内部结构的箱子并且玩家没有进入有内部结构的箱子，
+            // 如果可以推动有内部结构的箱子并且玩家没有进入有内部结构的箱子,进入的话会自动更新玩家位置
             if (isValidMove && !isEnter){
                 // 更新玩家位置
                 if (boards[newPlayerMap][newPlayerRow][newPlayerCol] == "=") {
