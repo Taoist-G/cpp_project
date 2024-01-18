@@ -5,12 +5,17 @@ void CommandLineInterface::displayGame(const GameBoard& game, int difficulty) co
     game.printBoard(difficulty);
 }
 
+void CommandLineInterface::displayGame(const GameBoard& game, std::string filename) const {
+    game.printBoard(filename);
+}
+
 void CommandLineInterface::displayMainMenu() const {
     std::cout << "Welcome to Sokoban!\n";
     std::cout << "1. Level 1\n";
     std::cout << "2. Level 2\n";
     std::cout << "3. Level 3\n";
     std::cout << "4. Level 4\n";
+    std::cout << "5. Load game\n";
     std::cout << "E. Exit\n";
     std::cout << "Select level : ";
 }

@@ -10,55 +10,14 @@ GameBoard::GameBoard(int difficulty) {
     initializeBoard(difficulty);
 }
 
-void GameBoard::initializeBoard(int difficulty) {
+GameBoard::GameBoard(std::string filename) {
+    isValidMove = true;
+    isEnter = false;
+    isLeave = false;
+    initializeBoard(filename);
+}
 
-//    levels = {
-//            {
-//                    {
-//                            {'#', '#', '#', '#', '#'},
-//                            {'#', 'P', 'B', '-', '#'},
-//                            {'#', '=', '.', '.', '#'},
-//                            {'#', '.', '.', '.', '#'},
-//                            {'#', '.', '.', '.', '#'},
-//                            {'#', '.', '.', '.', '#'},
-//                            {'#', '#', '#', '#', '#'}
-//                    },
-//            },
-//            {
-//                    {
-//                            {'#', '#', '#', '#', '#', '#', '#', '#'},
-//                            {'#', '.', '.', '.', '#', '-', '.', '#'},
-//                            {'#', '.', 'B', '-', '#', 'B', '.', '#'},
-//                            {'#', '.', '.', '.', '#', '.', '=', '#'},
-//                            {'#', '.', '.', '.', '.', '.', '.', '#'},
-//                            {'#', '.', '.', '.', '.', '.', '.', '#'},
-//                            {'#', '-', 'B', 'P', 'B', 'B', '-', '#'},
-//                            {'#', '#', '#', '#', '#', '#', '#', '#'}
-//                    },
-//            },
-//            {
-//                    {
-//                            {"#", "#", "#", "#", "#"},
-//                            {"#", "P", "B", "-", "#"},
-//                            {"#", ".", ".", ".", "#"},
-//                            {"#", ".", "I1", ".", "#"},
-//                            {"#", ".", ".", ".", "#"},
-//                            {"#", ".", ".", ".", "#"},
-//                            {"#", "#", "#", "#", "#"}
-//                    },
-//                    {
-//                            {"#", "#", "#", "#", "#", "#", "#", "#"},
-//                            {"#", ".", ".", ".", "#", "-", ".", "#"},
-//                            {".", ".", "B", "-", "#", "B", ".", "#"},
-//                            {".", ".", ".", ".", "#", ".", ".", "#"},
-//                            {".", ".", ".", ".", ".", ".", ".", "#"},
-//                            {"#", ".", ".", ".", "#", ".", "=", "#"},
-//                            {"#", "-", "B", ".", "#", "B", ".", "#"},
-//                            {"#", "#", "#", "#", "#", "#", "#", "#"}
-//                    }
-//            },
-//    };
-//    boards = levels[difficulty];
+void GameBoard::initializeBoard(int difficulty) {
 
     std::vector<std::vector<std::vector<std::string>>> boards1;
     boards1 = {
@@ -240,6 +199,198 @@ void GameBoard::initializeBoard(int difficulty) {
         }
     }
 }
+
+
+void GameBoard::initializeBoard(std::string filename) {
+
+    destinations.clear();
+    contains.clear();
+   
+    std::ifstream inFile(filename);
+    if (!inFile) {
+        std::cerr << "Error: Unable to open file for loading." << std::endl;
+        return;
+    }
+
+    std::string line;
+    bool isReadingBoards = false;
+    bool isReadingContains = false;
+    std::vector<std::vector<std::string>> currentMap;
+
+    while (getline(inFile, line)) {
+        // Check for map start
+        if (line.find("[Map ") != std::string::npos) {
+            isReadingBoards = true;
+            isReadingContains = false;
+            if (!currentMap.empty()) {
+                boards.push_back(currentMap);
+                currentMap.clear();
+            }
+            continue;
+        }
+        // Check for map end
+        if (line.find("[Map End]") != std::string::npos) {
+            isReadingBoards = false;
+            if (!currentMap.empty()) {
+                boards.push_back(currentMap);
+                currentMap.clear();
+            }
+            continue;
+        }
+        // Check for contains start
+        if (line.find("[Contains]") != std::string::npos) {
+            isReadingBoards = false;
+            isReadingContains = true;
+            continue;
+        }
+        // Check for contains end
+        if (line.find("[Contains End]") != std::string::npos) {
+            isReadingContains = false;
+            continue;
+        }
+
+        // Read the current line into the appropriate data structure
+        if (isReadingBoards) {
+            std::istringstream iss(line);
+            std::vector<std::string> row;
+            std::string cell;
+            while (iss >> cell) {
+                row.push_back(cell);
+            }
+            currentMap.push_back(row);
+        }
+        else if (isReadingContains) {
+            std::istringstream iss(line);
+            int map, innerMap, row, col;
+            if (iss >> map >> innerMap >> row >> col) {
+                contains.emplace_back(map, innerMap, row, col);
+            }
+        }
+    }
+    inFile.close();
+
+    for (int i = 0; i < boards.size(); ++i) {
+        for (int row = 0; row < boards[i].size(); ++row) {
+            for (int col = 0; col < boards[i][row].size(); ++col) {
+                if (boards[i][row][col] == "-" || boards[i][row][col] == "b" || boards[i][row][col].substr(0,1) == "i") {
+                    destinations.emplace_back(i,row, col);
+                }
+                if (boards[i][row][col] == "P" || boards[i][row][col] == "p") {
+                    playerMap = i;
+                    playerRow = row;
+                    playerCol = col;
+                }
+                if (boards[i][row][col] == "=" || boards[i][row][col] == "p") {
+                    checkMap = i;
+                    checkRow = row;
+                    checkCol = col;
+                }
+            }
+        }
+    }
+}
+
+
+void GameBoard::saveGameToFile(const std::string& filename) {
+    std::ofstream outFile(filename);
+    if (!outFile) {
+        std::cerr << "Error: Unable to open file for saving." << std::endl;
+        return;
+    }
+
+    // 保存地图信息
+    for (int i = 0; i < boards.size(); ++i) {
+        outFile << "[Map " << i + 1 << "]" << std::endl;
+        for (const auto& row : boards[i]) {
+            for (const auto& cell : row) {
+                outFile << cell << " ";
+            }
+            outFile << std::endl;
+        }
+        outFile << "[Map End]" << std::endl;
+    }
+
+    // 保存contains信息
+    outFile << "[Contains]" << std::endl;
+    for (const auto& contain : contains) {
+        outFile << std::get<0>(contain) << " "
+                << std::get<1>(contain) << " "
+                << std::get<2>(contain) << " "
+                << std::get<3>(contain) << std::endl;
+    }
+    outFile << "[Contains End]" << std::endl;
+
+    outFile.close();
+}
+
+
+// void GameBoard::loadGameFromFile(const std::string& filename) {
+//     std::ifstream inFile(filename);
+//     if (!inFile) {
+//         std::cerr << "Error: Unable to open file for loading." << std::endl;
+//         return;
+//     }
+
+//     std::string line;
+//     bool isReadingBoards = false;
+//     bool isReadingContains = false;
+//     std::vector<std::vector<std::string>> currentMap;
+
+//     while (getline(inFile, line)) {
+//         // Check for map start
+//         if (line.find("[Map ") != std::string::npos) {
+//             isReadingBoards = true;
+//             isReadingContains = false;
+//             if (!currentMap.empty()) {
+//                 boards.push_back(currentMap);
+//                 currentMap.clear();
+//             }
+//             continue;
+//         }
+//         // Check for map end
+//         if (line.find("[Map End]") != std::string::npos) {
+//             isReadingBoards = false;
+//             if (!currentMap.empty()) {
+//                 boards.push_back(currentMap);
+//                 currentMap.clear();
+//             }
+//             continue;
+//         }
+//         // Check for contains start
+//         if (line.find("[Contains]") != std::string::npos) {
+//             isReadingBoards = false;
+//             isReadingContains = true;
+//             continue;
+//         }
+//         // Check for contains end
+//         if (line.find("[Contains End]") != std::string::npos) {
+//             isReadingContains = false;
+//             continue;
+//         }
+
+//         // Read the current line into the appropriate data structure
+//         if (isReadingBoards) {
+//             std::istringstream iss(line);
+//             std::vector<std::string> row;
+//             std::string cell;
+//             while (iss >> cell) {
+//                 row.push_back(cell);
+//             }
+//             currentMap.push_back(row);
+//         }
+//         else if (isReadingContains) {
+//             std::istringstream iss(line);
+//             int map, innerMap, row, col;
+//             if (iss >> map >> innerMap >> row >> col) {
+//                 contains.emplace_back(map, innerMap, row, col);
+//             }
+//         }
+//     }
+
+//     inFile.close();
+// }
+
+
 
 
 // 遍历所有地图检测点，如果没有箱子或玩家，则在地图上重新打印检测点
@@ -1000,6 +1151,48 @@ void GameBoard::movePlayer(char direction) {
 //打印所有地图状态
 void GameBoard::printBoard(int difficulty) const {
     std::cout << "Current level: " << difficulty << std::endl;
+    for (int map = 0; map < boards.size(); ++map) {
+        for (int i = 0; i < boards[map].size(); i++) {
+            for (int j = 0; j < boards[map][0].size(); j++) {
+                std::cout << boards[map][i][j] << " ";
+            }
+            if (map == 0) {
+                switch (i) {
+                    case 0:
+                        std::cout << " | P: Player  p: Player on checkpoint  |";
+                        break;
+                    case 1:
+                        std::cout << " | B: Box  b: Box on storage point     |";
+                        break;
+                    case 2:
+                        std::cout << " | =: Checkpoint  -: Storage point     |";
+                        break;
+                    case 3:
+                        std::cout << " | #: Wall                             |";
+                        break;
+                    case 4:
+                        std::cout << " | R: Restart                          |";
+                        break;
+                    case 5:
+                        std::cout << " | Q: Quit(Back to menu)               |";
+                        break;
+                    case 6:
+                        std::cout << " | W/A/S/D: Move                       |";
+                        break;
+                    default:
+                        break;
+                }
+            }
+            std::cout << '\n';
+        }
+        std::cout << '\n';
+    }
+    std::cout << '\n';
+
+}
+
+void GameBoard::printBoard(std::string filename) const {
+    std::cout << "Current level: " << 5 << std::endl;
     for (int map = 0; map < boards.size(); ++map) {
         for (int i = 0; i < boards[map].size(); i++) {
             for (int j = 0; j < boards[map][0].size(); j++) {

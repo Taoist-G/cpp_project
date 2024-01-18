@@ -6,9 +6,13 @@
 class GameBoard {
 public:
     GameBoard(int difficulty);
+    GameBoard(std::string filename);
     void movePlayer(char direction);
     bool isGameOver() const;
     void printBoard(int difficulty) const;
+    void printBoard(std::string filename) const;
+    void saveGameToFile(const std::string& filename);
+    void loadGameFromFile(const std::string& filename);
 
 
 private:
@@ -25,6 +29,7 @@ private:
     int playerMap, playerRow, playerCol, checkMap, checkRow, checkCol;
 
     void initializeBoard(int choice);
+    void initializeBoard(std::string filename);
     void moveBox(char direction, int oldMap, int oldRow, int oldCol, int newMap, int newRow, int newCol);
     void enterInternalBox(char direction, int oldRow, int oldCol, int oldMap, int boxRow, int boxCol);
     void leaveInternalBox(char direction, int newMap, int newRow, int newCol);
