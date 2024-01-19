@@ -198,8 +198,11 @@ void GameBoard::initializeBoard(int difficulty) {
             }
         }
     }
-}
 
+    
+    
+
+}
 
 void GameBoard::initializeBoard(std::string filename) {
 
@@ -290,7 +293,6 @@ void GameBoard::initializeBoard(std::string filename) {
     }
 }
 
-
 void GameBoard::saveGameToFile(const std::string& filename) {
     std::ofstream outFile(filename);
     if (!outFile) {
@@ -322,75 +324,6 @@ void GameBoard::saveGameToFile(const std::string& filename) {
 
     outFile.close();
 }
-
-
-// void GameBoard::loadGameFromFile(const std::string& filename) {
-//     std::ifstream inFile(filename);
-//     if (!inFile) {
-//         std::cerr << "Error: Unable to open file for loading." << std::endl;
-//         return;
-//     }
-
-//     std::string line;
-//     bool isReadingBoards = false;
-//     bool isReadingContains = false;
-//     std::vector<std::vector<std::string>> currentMap;
-
-//     while (getline(inFile, line)) {
-//         // Check for map start
-//         if (line.find("[Map ") != std::string::npos) {
-//             isReadingBoards = true;
-//             isReadingContains = false;
-//             if (!currentMap.empty()) {
-//                 boards.push_back(currentMap);
-//                 currentMap.clear();
-//             }
-//             continue;
-//         }
-//         // Check for map end
-//         if (line.find("[Map End]") != std::string::npos) {
-//             isReadingBoards = false;
-//             if (!currentMap.empty()) {
-//                 boards.push_back(currentMap);
-//                 currentMap.clear();
-//             }
-//             continue;
-//         }
-//         // Check for contains start
-//         if (line.find("[Contains]") != std::string::npos) {
-//             isReadingBoards = false;
-//             isReadingContains = true;
-//             continue;
-//         }
-//         // Check for contains end
-//         if (line.find("[Contains End]") != std::string::npos) {
-//             isReadingContains = false;
-//             continue;
-//         }
-
-//         // Read the current line into the appropriate data structure
-//         if (isReadingBoards) {
-//             std::istringstream iss(line);
-//             std::vector<std::string> row;
-//             std::string cell;
-//             while (iss >> cell) {
-//                 row.push_back(cell);
-//             }
-//             currentMap.push_back(row);
-//         }
-//         else if (isReadingContains) {
-//             std::istringstream iss(line);
-//             int map, innerMap, row, col;
-//             if (iss >> map >> innerMap >> row >> col) {
-//                 contains.emplace_back(map, innerMap, row, col);
-//             }
-//         }
-//     }
-
-//     inFile.close();
-// }
-
-
 
 
 // 遍历所有地图检测点，如果没有箱子或玩家，则在地图上重新打印检测点
@@ -1042,6 +975,11 @@ void GameBoard::moveInternalBox(char direction, int oldMap, int oldRow, int oldC
 
 //玩家的移动逻辑
 void GameBoard::movePlayer(char direction) {
+    boards_old=boards;
+    contains_old=contains;
+    std::array<int,3>player_old={playerMap,playerRow,playerCol};
+    player.push(player_old);
+
     int newPlayerMap = playerMap;
     int newPlayerRow = playerRow;
     int newPlayerCol = playerCol;
@@ -1248,4 +1186,92 @@ bool GameBoard::isGameOver() const {
     return true;
 }
 
+//只需要存储哪个地图的哪个位置发生了变化以及变化前的元素，和contains变化前的四个参数。
+//两个stack分别存这一步有没有导致地图元素变化或者contains变化。
+//玩家每走一步，先是对前后的boards进行对比，找到有没有变化，有变化就对地图判断stack进行push(1)，所有变化位置和变化前元素存进地图stack，没变化push(0)。
+//同时对前后contains进行对比，找找有没有变化，有变化就对con判断stack进行push(1)，将变化前的contains存入con_stack，没变化push(0)
+void GameBoard::getChange(){
+    bool isChange=false;
+    for (int i = 0; i < boards.size(); i++)
+    {
+        for (int j = 0; j < boards[i].size(); j++)
+        {
+            for (int k = 0; k < boards[i][j].size(); k++)
+            {
+                if (boards_old[i][j][k]!=boards[i][j][k])
+                {
+                    isChange=true;
+                    boards_before change = {i,j,k,boards_old[i][j][k]};
+                    before_vector.push_back(change);
+                } 
+            }
+        }
+    }
+    if (isChange)
+    {
+        isBoardsChange.push(1);
+        boardsStack.push(before_vector);
+        before_vector.clear();
+    }else{
+        isBoardsChange.push(0);
+    }
+
+    isChange=false;
+    for (int i = 0; i < contains.size(); i++)
+    {
+        if (contains_old[i]!=contains[i])
+        {
+            isChange=true;
+        }
+    }
+    if (isChange)
+    {
+        isContainsChange.push(1);
+        containsStack.push(contains_old);
+    }else{
+        isContainsChange.push(0);
+    }
+
+    contains_old=contains;
+    boards_old=boards;
+}
+
+//在进行撤销时，先对两个判断stack进行top和pop，如果是0则跳过修改，如果是1对地图或con的stack分别top和pop。
+//如果地图判断是1，将对应坐标的元素改为之前存的元素；如果con判断是1，将contains清零然后存入top对应的contains。
+void GameBoard::undo(){
+    if (isBoardsChange.empty())
+    {
+        return;
+    }
+    
+    int isboardschange=isBoardsChange.top();
+    isBoardsChange.pop();
+    int iscontainschange=isContainsChange.top();
+    isContainsChange.pop();
+    if (isboardschange)
+    {
+        before_vector = boardsStack.top();
+        boardsStack.pop();
+        boards_before change;
+        for (int i = 0; i < before_vector.size(); i++)
+        {
+            change=before_vector[i];
+            boards[change.x][change.y][change.z]=change.value;
+        }
+    }
+
+    if (iscontainschange)
+    {
+        contains.clear();
+        contains=containsStack.top();
+        containsStack.pop();
+    }
+
+    std::array<int,3>player_old=player.top();
+    player.pop();
+    playerMap = player_old[0];
+    playerRow = player_old[1];
+    playerCol = player_old[2];
+    
+}
 
