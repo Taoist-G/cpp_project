@@ -22,16 +22,6 @@ void GameBoard::initializeBoard(int difficulty) {
     std::vector<std::vector<std::vector<std::string>>> boards1;
     boards1 = {
             {
-                    {".", ".", ".", ".", "."},
-                    {".", ".", ".", ".", "."},
-                    {".", ".", ".", ".", "."},
-                    {".", ".", ".", ".", "."},
-                    {".", ".", ".", ".", "."},
-                    {".", ".", ".", ".", "."},
-                    {".", ".", ".", ".", "."}
-
-            },
-            {
                     {"#", "#", "#", "#", "#"},
                     {"#", "P", ".", "=", "#"},
                     {"#", ".", "I2", ".", "."},
@@ -51,16 +41,6 @@ void GameBoard::initializeBoard(int difficulty) {
     std::vector<std::vector<std::vector<std::string>>> boards2;
     boards2 = {
             {
-                    {"#", "#", "#", "#", "#", "#", "#"},
-                    {"#", ".", ".", ".", ".", ".", "#"},
-                    {"#", ".", ".", ".", ".", ".", "#"},
-                    {"#", "P", "I1", "I2", "B", ".", "#"},
-                    {"#", ".", ".", ".", ".", ".", "#"},
-                    {"#", ".", ".", ".", ".", ".", "#"},
-                    {"#", "=", ".", ".", ".", ".", "#"},
-                    {"#", "#", "#", "#", "#", "#", "#"}
-            },
-            {
                     {"#", "#", "#", "#", "#", "#", "#", "#"},
                     {"#", ".", ".", ".", ".", ".", ".", "#"},
                     {".", ".", ".", ".", ".", ".", ".", "#"},
@@ -79,20 +59,21 @@ void GameBoard::initializeBoard(int difficulty) {
                     {"#", ".", ".", ".", ".", ".", ".", "."},
                     {"#", ".", ".", ".", ".", ".", ".", "#"},
                     {"#", "#", "#", "#", "#", "#", "#", "#"}
-            }
+            },
+            {
+                    {"#", "#", "#", "#", "#", "#", "#"},
+                    {"#", ".", ".", ".", ".", ".", "#"},
+                    {"#", ".", ".", ".", ".", ".", "#"},
+                    {"#", "P", "I1", "I2", "B", ".", "#"},
+                    {"#", ".", ".", ".", ".", ".", "#"},
+                    {"#", ".", ".", ".", ".", ".", "#"},
+                    {"#", "=", ".", ".", ".", ".", "#"},
+                    {"#", "#", "#", "#", "#", "#", "#"}
+            },
     };
 
     std::vector<std::vector<std::vector<std::string>>> boards3;
     boards3 = {
-            {
-                    {".", ".", ".", ".", "."},
-                    {".", ".", ".", ".", "."},
-                    {".", ".", ".", ".", "."},
-                    {".", ".", ".", ".", "."},
-                    {".", ".", ".", ".", "."},
-                    {".", ".", ".", ".", "."},
-                    {".", ".", ".", ".", "."}
-            },
             {
                     {"#", "#", "#", "#", "#", "#", "#", "#", "#"},
                     {"#", "I1", "B", "I2", "I3", "B", "B", "P", "B"},
@@ -117,15 +98,6 @@ void GameBoard::initializeBoard(int difficulty) {
 
     std::vector<std::vector<std::vector<std::string>>> boards4;
     boards4 = {
-            {
-                    {".", ".", ".", ".", "."},
-                    {".", ".", ".", ".", "."},
-                    {".", ".", ".", ".", "."},
-                    {".", ".", ".", ".", "."},
-                    {".", ".", ".", ".", "."},
-                    {".", ".", ".", ".", "."},
-                    {".", ".", ".", ".", "."}
-            },
             {
                     {"#", "#", "#", "#"},
                     {"#", "I2", "I3", "#"},
@@ -156,26 +128,26 @@ void GameBoard::initializeBoard(int difficulty) {
         case 1:
             // Internal Structures
             boards = boards1;
-            contains.emplace_back(2,1,2,2);
-            contains.emplace_back(1,2,2,2);
+            contains.emplace_back(1,0,2,2);
+            contains.emplace_back(0,1,2,2);
             break;
         case 2:
             boards = boards2;
-            contains.emplace_back(0,1,3,2);
-            contains.emplace_back(0,2,3,3);
+            contains.emplace_back(2,0,3,2);
+            contains.emplace_back(2,1,3,3);
             break;
         case 3:
             // Greedy Snake
             boards = boards3;
-            contains.emplace_back(1,1,1,1);
-            contains.emplace_back(1,2,1,4);
-            contains.emplace_back(1,3,1,5);
+            contains.emplace_back(0,0,1,1);
+            contains.emplace_back(0,1,1,4);
+            contains.emplace_back(0,2,1,5);
             break;
         case 4:
             // Recursive Box
             boards = boards4;
-            contains.emplace_back(1,2,1,1);
-            contains.emplace_back(1,3,1,2);
+            contains.emplace_back(0,1,1,1);
+            contains.emplace_back(0,2,1,2);
             break;
     }
 
@@ -516,7 +488,7 @@ void GameBoard::enterInternalBox(char direction, int oldRow, int oldCol, int old
             }
         }
         // boxId此时为包含oldMap的地图的序号
-        boxId = std::stoi(boards[containMap][boxRow][boxCol].substr(1, 2));
+        boxId = std::stoi(boards[containMap][boxRow][boxCol].substr(1, 2)) - 1;
         isLeave = false;
         // 计算从不同方向进入后，对应的进入后的位置
         switch (direction) {
@@ -543,7 +515,7 @@ void GameBoard::enterInternalBox(char direction, int oldRow, int oldCol, int old
         }
     } else {
         // boxId此时为oldMap本身地图的序号
-        boxId = std::stoi(boards[oldMap][boxRow][boxCol].substr(1, 2));
+        boxId = std::stoi(boards[oldMap][boxRow][boxCol].substr(1, 2)) - 1;
         // 计算从不同方向进入后，对应的进入后的位置
         switch (direction) {
             case 'W': {
@@ -604,7 +576,7 @@ void GameBoard::enterInternalBox(char direction, int oldRow, int oldCol, int old
                 if (boards[boxId][r][c] == "-") {
                     boards[boxId][r][c] = "i" + boards[oldMap][oldRow][oldCol].substr(1);
                     for (auto& tuple : contains) {
-                        if (std::get<1>(tuple) == std::stoi(boards[oldMap][oldRow][oldCol].substr(1, 2))) {
+                        if (std::get<1>(tuple) == std::stoi(boards[oldMap][oldRow][oldCol].substr(1, 2)) - 1) {
                             std::get<0>(tuple) = boxId;
                             std::get<2>(tuple) = r;
                             std::get<3>(tuple) = c;
@@ -613,7 +585,7 @@ void GameBoard::enterInternalBox(char direction, int oldRow, int oldCol, int old
                 } else {
                     boards[boxId][r][c] = "I" + boards[oldMap][oldRow][oldCol].substr(1);
                     for (auto& tuple : contains) {
-                        if (std::get<1>(tuple) == std::stoi(boards[oldMap][oldRow][oldCol].substr(1, 2))) {
+                        if (std::get<1>(tuple) == std::stoi(boards[oldMap][oldRow][oldCol].substr(1, 2)) - 1) {
                             std::get<0>(tuple) = boxId;
                             std::get<2>(tuple) = r;
                             std::get<3>(tuple) = c;
@@ -740,7 +712,7 @@ void GameBoard::leaveInternalBox(char direction, int oldMap, int oldRow, int old
                                 boards[newMap][newRow][newCol] = "I" + boards[oldMap][oldRow][oldCol].substr(1);
                             }
                             for (auto& tuple : contains) {
-                                if (std::get<1>(tuple) == std::stoi(boards[oldMap][oldRow][oldCol].substr(1, 2))) {
+                                if (std::get<1>(tuple) == std::stoi(boards[oldMap][oldRow][oldCol].substr(1, 2)) - 1) {
                                     std::get<0>(tuple) = newMap;
                                     std::get<2>(tuple) = newRow;
                                     std::get<3>(tuple) = newCol;
@@ -786,7 +758,7 @@ void GameBoard::leaveInternalBox(char direction, int oldMap, int oldRow, int old
                                 boards[newMap][newRow][newCol] = "I" + boards[oldMap][oldRow][oldCol].substr(1);
                             }
                             for (auto& tuple : contains) {
-                                if (std::get<1>(tuple) == std::stoi(boards[oldMap][oldRow][oldCol].substr(1, 2))) {
+                                if (std::get<1>(tuple) == std::stoi(boards[oldMap][oldRow][oldCol].substr(1, 2)) - 1) {
                                     std::get<0>(tuple) = newMap;
                                     std::get<2>(tuple) = newRow;
                                     std::get<3>(tuple) = newCol;
@@ -833,7 +805,7 @@ void GameBoard::leaveInternalBox(char direction, int oldMap, int oldRow, int old
                             boards[newMap][newRow][newCol] = "I" + boards[oldMap][oldRow][oldCol].substr(1);
                         }
                         for (auto& tuple : contains) {
-                            if (std::get<1>(tuple) == std::stoi(boards[oldMap][oldRow][oldCol].substr(1, 2))) {
+                            if (std::get<1>(tuple) == std::stoi(boards[oldMap][oldRow][oldCol].substr(1, 2)) - 1) {
                                 std::get<0>(tuple) = newMap;
                                 std::get<2>(tuple) = newRow;
                                 std::get<3>(tuple) = newCol;
@@ -866,7 +838,7 @@ void GameBoard::leaveInternalBox(char direction, int oldMap, int oldRow, int old
 // 在这个函数中我们移动的是原本位于newMap上newRow和newCol位置上的有内部结构的箱子,移动到newBoxMap上newBoxRow和newBoxCol位置
 void GameBoard::moveInternalBox(char direction, int oldMap, int oldRow, int oldCol, int newMap, int newRow, int newCol) {
     // 获取位于newMap上newRow和newCol位置上的有内部结构的箱子本身地图的序号,后续用来更新该有内部结构的箱子的数据
-    int boxId = std::stoi(boards[newMap][newRow][newCol].substr(1, 2));
+    int boxId = std::stoi(boards[newMap][newRow][newCol].substr(1, 2)) - 1;
     int newBoxMap = newMap;
     int newBoxRow = newRow;
     int newBoxCol = newCol;
@@ -1151,37 +1123,21 @@ void GameBoard::movePlayer(char direction) {
 //打印所有地图状态
 void GameBoard::printBoard(int difficulty) const {
     std::cout << "Current level: " << difficulty << std::endl;
+    std::cout << '\n';
+    std::cout << "| Map information:                                   |" << std::endl;
+    std::cout << "| P: Player         p: Player on checkpoint          |" << std::endl;
+    std::cout << "| B: Box            b: Box on storage point          |" << std::endl;
+    std::cout << "| In: InternalBox   in: InternalBox on storage point |" << std::endl;
+    std::cout << "| =: Checkpoint     -: Storage point                 |" << std::endl;
+    std::cout << "| #: Wall                                            |" << std::endl;
+    std::cout << "| Game operator:                                     |" << std::endl;
+    std::cout << "| R: Restart        Q: Quit(Back to menu)            |" << std::endl;
+    std::cout << "| W/A/S/D: Move                                      |" << std::endl;
+    std::cout << '\n';
     for (int map = 0; map < boards.size(); ++map) {
         for (int i = 0; i < boards[map].size(); i++) {
             for (int j = 0; j < boards[map][0].size(); j++) {
                 std::cout << boards[map][i][j] << " ";
-            }
-            if (map == 0) {
-                switch (i) {
-                    case 0:
-                        std::cout << " | P: Player  p: Player on checkpoint  |";
-                        break;
-                    case 1:
-                        std::cout << " | B: Box  b: Box on storage point     |";
-                        break;
-                    case 2:
-                        std::cout << " | =: Checkpoint  -: Storage point     |";
-                        break;
-                    case 3:
-                        std::cout << " | #: Wall                             |";
-                        break;
-                    case 4:
-                        std::cout << " | R: Restart                          |";
-                        break;
-                    case 5:
-                        std::cout << " | Q: Quit(Back to menu)               |";
-                        break;
-                    case 6:
-                        std::cout << " | W/A/S/D: Move                       |";
-                        break;
-                    default:
-                        break;
-                }
             }
             std::cout << '\n';
         }
