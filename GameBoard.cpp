@@ -41,34 +41,19 @@ void GameBoard::initializeBoard(int difficulty) {
     std::vector<std::vector<std::vector<std::string>>> boards2;
     boards2 = {
             {
-                    {"#", "#", "#", "#", "#", "#", "#", "#"},
-                    {"#", ".", ".", ".", ".", ".", ".", "#"},
-                    {".", ".", ".", ".", ".", ".", ".", "#"},
-                    {".", ".", ".", ".", ".", ".", ".", "#"},
-                    {".", ".", ".", "B", "b", "-", ".", "#"},
-                    {"#", ".", ".", ".", ".", ".", ".", "#"},
-                    {"#", ".", ".", ".", "#", ".", ".", "#"},
-                    {"#", "#", "#", "#", "#", "#", "#", "#"}
+                    {"#", "#", "#", "#"},
+                    {"#", "I2", "I3", "#"},
+                    {"#", "#", "#", "#"}
             },
             {
-                    {"#", "#", "#", "#", "#", "#", "#", "#"},
-                    {"#", ".", ".", ".", ".", ".", ".", "#"},
-                    {".", ".", ".", ".", ".", ".", ".", "#"},
-                    {".", ".", ".", ".", ".", ".", ".", "-"},
-                    {".", ".", ".", "-", "-", ".", ".", "B"},
-                    {"#", ".", ".", ".", ".", ".", ".", "."},
-                    {"#", ".", ".", ".", ".", ".", ".", "#"},
-                    {"#", "#", "#", "#", "#", "#", "#", "#"}
+                    {"#", ".", "P"},
+                    {"#", ".", "."},
+                    {"#", ".", "B"}
             },
             {
-                    {"#", "#", "#", "#", "#", "#", "#"},
-                    {"#", ".", ".", ".", ".", ".", "#"},
-                    {"#", ".", ".", ".", ".", ".", "#"},
-                    {"#", "P", "I1", "I2", "B", ".", "#"},
-                    {"#", ".", ".", ".", ".", ".", "#"},
-                    {"#", ".", ".", ".", ".", ".", "#"},
-                    {"#", "=", ".", ".", ".", ".", "#"},
-                    {"#", "#", "#", "#", "#", "#", "#"}
+                    {".", ".", "#"},
+                    {".", "=", "#"},
+                    {".", "-", "#"}
             },
     };
 
@@ -99,19 +84,36 @@ void GameBoard::initializeBoard(int difficulty) {
     std::vector<std::vector<std::vector<std::string>>> boards4;
     boards4 = {
             {
+                    {".", ".", ".", "."},
+                    {".", ".", ".", "."},
+                    {".", "B", "-", "."},
+                    {".", ".", ".", "."},
+                    {".", ".", ".", "."},
+            },
+            {
                     {"#", "#", "#", "#"},
-                    {"#", "I2", "I3", "#"},
+                    {"#", "I1", ".", "."},
+                    {"#", "-", "B", "."},
+                    {"#", ".", ".", "."},
                     {"#", "#", "#", "#"}
             },
             {
-                    {"#", ".", "P"},
-                    {"#", ".", "."},
-                    {"#", ".", "B"}
+                    {"#", "#", "#", "#"},
+                    {"#", ".", "I1", "#"},
+                    {"#", ".", ".", "."},
+                    {"#", ".", ".", "."},
+                    {"#", ".", ".", "#"},
+                    {"#", ".", ".", "#"}
             },
             {
-                    {".", ".", "#"},
-                    {".", "=", "#"},
-                    {".", "-", "#"}
+                    {"#", "#", "#", "#", "#", "#", "#"},
+                    {"#", ".", ".", "#", "I3", ".", "#"},
+                    {"#", ".", "I1", ".", ".", ".", "#"},
+                    {"#", "B", ".", "#", "P", "=", "#"},
+                    {"#", "-", ".", "#", ".", ".", "#"},
+                    {"#", "#", "#", "#", ".", ".", "#"},
+                    {"#", "I2", ".", ".", ".", ".", "#"},
+                    {"#", "#", "#", "#", "#", "#", "#"}
             },
     };
     // 地图上标志的含义
@@ -122,32 +124,36 @@ void GameBoard::initializeBoard(int difficulty) {
     destinations.clear();
     contains.clear();
     // 初始化时手动设置有内部结构的箱子的被包含关系和坐标
-    // contains记录包含关系 第一个元素包含第二个元素 第一个和第二个元素是对应地图的序号
+    // contains记录包含关系 第一个元素包含第二个元素 第一个和第二个元素是对应地图的序号 第五个元素是第二个元素的唯一“父亲”
     // 第三第四个元素是第二个元素对应地图在第一个元素对应地图中的行和列
     switch (difficulty) {
         case 1:
             // Internal Structures
             boards = boards1;
-            contains.emplace_back(1,0,2,2);
-            contains.emplace_back(0,1,2,2);
+            contains.emplace_back(1,0,2,2,1);
+            contains.emplace_back(0,1,2,2,0);
             break;
         case 2:
+            // Recursive Box
             boards = boards2;
-            contains.emplace_back(2,0,3,2);
-            contains.emplace_back(2,1,3,3);
+            contains.emplace_back(0,1,1,1,0);
+            contains.emplace_back(0,2,1,2,0);
             break;
         case 3:
             // Greedy Snake
             boards = boards3;
-            contains.emplace_back(0,0,1,1);
-            contains.emplace_back(0,1,1,4);
-            contains.emplace_back(0,2,1,5);
+            contains.emplace_back(0,0,1,1,0);
+            contains.emplace_back(0,1,1,4,0);
+            contains.emplace_back(0,2,1,5,0);
             break;
         case 4:
-            // Recursive Box
+            // Multiple reference
             boards = boards4;
-            contains.emplace_back(0,1,1,1);
-            contains.emplace_back(0,2,1,2);
+            contains.emplace_back(3,0,2,2,3);
+            contains.emplace_back(1,0,1,1,3);
+            contains.emplace_back(2,0,1,2,3);
+            contains.emplace_back(3,1,6,1,3);
+            contains.emplace_back(3,2,1,4,3);
             break;
     }
 
@@ -235,7 +241,7 @@ void GameBoard::initializeBoard(std::string filename) {
             std::istringstream iss(line);
             int map, innerMap, row, col;
             if (iss >> map >> innerMap >> row >> col) {
-                contains.emplace_back(map, innerMap, row, col);
+                contains.emplace_back(map, innerMap, row, col, map);
             }
         }
     }
@@ -370,7 +376,6 @@ void GameBoard::repaintDest(){
     for (auto & destination : destinations) {
         if (boards[std::get<0>(destination)][std::get<1>(destination)][std::get<2>(destination)] != "b"
          && boards[std::get<0>(destination)][std::get<1>(destination)][std::get<2>(destination)] != "P"
-         && boards[std::get<0>(destination)][std::get<1>(destination)][std::get<2>(destination)].substr(0,1) != "I"
          && boards[std::get<0>(destination)][std::get<1>(destination)][std::get<2>(destination)].substr(0,1) != "i") {
             boards[std::get<0>(destination)][std::get<1>(destination)][std::get<2>(destination)] = "-";
         }
@@ -576,19 +581,33 @@ void GameBoard::enterInternalBox(char direction, int oldRow, int oldCol, int old
                 if (boards[boxId][r][c] == "-") {
                     boards[boxId][r][c] = "i" + boards[oldMap][oldRow][oldCol].substr(1);
                     for (auto& tuple : contains) {
-                        if (std::get<1>(tuple) == std::stoi(boards[oldMap][oldRow][oldCol].substr(1, 2)) - 1) {
-                            std::get<0>(tuple) = boxId;
-                            std::get<2>(tuple) = r;
-                            std::get<3>(tuple) = c;
+                        if (std::get<1>(tuple) == std::stoi(boards[oldMap][oldRow][oldCol].substr(1, 2)) - 1 && std::get<0>(tuple) == oldMap) {
+                            if (std::get<0>(tuple) == std::get<4>(tuple)) {
+                                std::get<0>(tuple) = boxId;
+                                std::get<2>(tuple) = r;
+                                std::get<3>(tuple) = c;
+                                std::get<4>(tuple) = boxId;
+                            }else {
+                                std::get<0>(tuple) = boxId;
+                                std::get<2>(tuple) = r;
+                                std::get<3>(tuple) = c;
+                            }
                         }
                     }
                 } else {
                     boards[boxId][r][c] = "I" + boards[oldMap][oldRow][oldCol].substr(1);
                     for (auto& tuple : contains) {
-                        if (std::get<1>(tuple) == std::stoi(boards[oldMap][oldRow][oldCol].substr(1, 2)) - 1) {
-                            std::get<0>(tuple) = boxId;
-                            std::get<2>(tuple) = r;
-                            std::get<3>(tuple) = c;
+                        if (std::get<1>(tuple) == std::stoi(boards[oldMap][oldRow][oldCol].substr(1, 2)) - 1 && std::get<0>(tuple) == oldMap) {
+                            if (std::get<0>(tuple) == std::get<4>(tuple)) {
+                                std::get<0>(tuple) = boxId;
+                                std::get<2>(tuple) = r;
+                                std::get<3>(tuple) = c;
+                                std::get<4>(tuple) = boxId;
+                            }else {
+                                std::get<0>(tuple) = boxId;
+                                std::get<2>(tuple) = r;
+                                std::get<3>(tuple) = c;
+                            }
                         }
                     }
                 }
@@ -662,9 +681,9 @@ void GameBoard::leaveInternalBox(char direction, int oldMap, int oldRow, int old
     // 遍历contains，检索并计算走出之后的地图和在地图中的位置，并进行移动
     for (auto& tuple : contains) {
         // 找到了该有内部结构的箱子对应的数据
-        if (std::get<1>(tuple) == oldMap) {
+        if (std::get<1>(tuple) == oldMap && std::get<0>(tuple) == std::get<4>(tuple)) {
             // 获取走出之后新地图的序号和在新地图中的位置
-            newMap = std::get<0>(tuple);
+            newMap = std::get<4>(tuple);
             switch (direction) {
                 case 'W':
                     newRow = std::get<2>(tuple) - 1;
@@ -712,10 +731,17 @@ void GameBoard::leaveInternalBox(char direction, int oldMap, int oldRow, int old
                                 boards[newMap][newRow][newCol] = "I" + boards[oldMap][oldRow][oldCol].substr(1);
                             }
                             for (auto& tuple : contains) {
-                                if (std::get<1>(tuple) == std::stoi(boards[oldMap][oldRow][oldCol].substr(1, 2)) - 1) {
-                                    std::get<0>(tuple) = newMap;
-                                    std::get<2>(tuple) = newRow;
-                                    std::get<3>(tuple) = newCol;
+                                if (std::get<1>(tuple) == std::stoi(boards[oldMap][oldRow][oldCol].substr(1, 2)) - 1 && std::get<0>(tuple) == oldMap) {
+                                    if (std::get<0>(tuple) == std::get<4>(tuple)) {
+                                        std::get<0>(tuple) = newMap;
+                                        std::get<2>(tuple) = newRow;
+                                        std::get<3>(tuple) = newCol;
+                                        std::get<4>(tuple) = newMap;
+                                    }else {
+                                        std::get<0>(tuple) = newMap;
+                                        std::get<2>(tuple) = newRow;
+                                        std::get<3>(tuple) = newCol;
+                                    }
                                 }
                             }
                             boards[oldMap][oldRow][oldCol] = ".";
@@ -758,10 +784,17 @@ void GameBoard::leaveInternalBox(char direction, int oldMap, int oldRow, int old
                                 boards[newMap][newRow][newCol] = "I" + boards[oldMap][oldRow][oldCol].substr(1);
                             }
                             for (auto& tuple : contains) {
-                                if (std::get<1>(tuple) == std::stoi(boards[oldMap][oldRow][oldCol].substr(1, 2)) - 1) {
-                                    std::get<0>(tuple) = newMap;
-                                    std::get<2>(tuple) = newRow;
-                                    std::get<3>(tuple) = newCol;
+                                if (std::get<1>(tuple) == std::stoi(boards[oldMap][oldRow][oldCol].substr(1, 2)) - 1 && std::get<0>(tuple) == oldMap) {
+                                    if (std::get<0>(tuple) == std::get<4>(tuple)) {
+                                        std::get<0>(tuple) = newMap;
+                                        std::get<2>(tuple) = newRow;
+                                        std::get<3>(tuple) = newCol;
+                                        std::get<4>(tuple) = newMap;
+                                    }else {
+                                        std::get<0>(tuple) = newMap;
+                                        std::get<2>(tuple) = newRow;
+                                        std::get<3>(tuple) = newCol;
+                                    }
                                 }
                             }
                             boards[oldMap][oldRow][oldCol] = ".";
@@ -805,10 +838,17 @@ void GameBoard::leaveInternalBox(char direction, int oldMap, int oldRow, int old
                             boards[newMap][newRow][newCol] = "I" + boards[oldMap][oldRow][oldCol].substr(1);
                         }
                         for (auto& tuple : contains) {
-                            if (std::get<1>(tuple) == std::stoi(boards[oldMap][oldRow][oldCol].substr(1, 2)) - 1) {
-                                std::get<0>(tuple) = newMap;
-                                std::get<2>(tuple) = newRow;
-                                std::get<3>(tuple) = newCol;
+                            if (std::get<1>(tuple) == std::stoi(boards[oldMap][oldRow][oldCol].substr(1, 2)) - 1 && std::get<0>(tuple) == oldMap) {
+                                if (std::get<0>(tuple) == std::get<4>(tuple)) {
+                                    std::get<0>(tuple) = newMap;
+                                    std::get<2>(tuple) = newRow;
+                                    std::get<3>(tuple) = newCol;
+                                    std::get<4>(tuple) = newMap;
+                                }else {
+                                    std::get<0>(tuple) = newMap;
+                                    std::get<2>(tuple) = newRow;
+                                    std::get<3>(tuple) = newCol;
+                                }
                             }
                         }
                         boards[oldMap][oldRow][oldCol] = ".";

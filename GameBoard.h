@@ -25,7 +25,7 @@ private:
     std::vector<std::tuple<int, int, int>> destinations;
     // contains记录包含关系 第一个元素包含第二个元素 第一个和第二个元素是对应地图的序号
     // 第三第四个元素是第二个元素对应地图在第一个元素对应地图中的行和列
-    std::vector<std::tuple<int, int, int, int>> contains;
+    std::vector<std::tuple<int, int, int, int, int>> contains;
     int playerMap, playerRow, playerCol, checkMap, checkRow, checkCol;
 
     void initializeBoard(int choice);
