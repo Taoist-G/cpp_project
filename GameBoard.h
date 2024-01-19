@@ -39,14 +39,14 @@ private:
     std::stack<std::array<int,3>> player;
 
     std::vector<std::vector<std::vector<std::string>>> boards_old;
-    std::vector<std::tuple<int, int, int, int>> contains_old;
+    std::vector<std::tuple<int, int, int, int,int>> contains_old;
     std::stack<int> isBoardsChange;
     std::stack<int> isContainsChange;
 
     std::vector<boards_before> before_vector;
     std::stack<std::vector<boards_before>> boardsStack;
 
-    std::stack<std::vector<std::tuple<int, int, int, int>>> containsStack;
+    std::stack<std::vector<std::tuple<int, int, int, int,int>>> containsStack;
 
     void initializeBoard(int choice);
     void initializeBoard(std::string filename);
