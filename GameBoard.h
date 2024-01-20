@@ -28,13 +28,14 @@ private:
     bool isEnter;
     bool isLeave;
     std::vector<std::string> mapNames;
-    std::vector<std::vector<std::vector<std::vector<std::string>>>> levels;
     std::vector<std::vector<std::vector<std::string>>> boards;
+    std::vector<std::vector<std::string>> empty_space;
+    std::vector<std::vector<std::string>> inf_space;
     std::vector<std::tuple<int, int, int>> destinations;
     // contains记录包含关系 第一个元素包含第二个元素 第一个和第二个元素是对应地图的序号
     // 第三第四个元素是第二个元素对应地图在第一个元素对应地图中的行和列
     std::vector<std::tuple<int, int, int, int, int>> contains;
-    int playerMap, playerRow, playerCol, checkMap, checkRow, checkCol;
+    int playerMap, playerRow, playerCol, checkMap, checkRow, checkCol, infMap, infRow, infCol;
 
     std::stack<std::array<int,3>> player;
 

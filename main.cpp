@@ -30,6 +30,9 @@ int main() {
             playGame(4);
         }else if (menuChoice=='5')
         {
+            playGame(5);
+        }else if (menuChoice=='6')
+        {
             std::cout<<"please input filename: ";
             std::string filename1;
             std::cin>>filename1;

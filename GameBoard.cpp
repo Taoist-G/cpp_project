@@ -32,7 +32,7 @@ void GameBoard::initializeBoard(int difficulty) {
                     {"#", "#", "#", "#", "#"},
                     {"#", ".", ".", ".", "#"},
                     {".", ".", "I1", ".", "#"},
-                    {"#", ".", ".", ".", "#"},
+                    {"#", ".", "B", "-", "#"},
                     {"#", "#", "#", "#", "#"}
             },
     };
@@ -53,7 +53,7 @@ void GameBoard::initializeBoard(int difficulty) {
             {
                     {".", ".", "#"},
                     {".", "=", "#"},
-                    {".", "-", "#"}
+                    {".", "-", "#"},
             },
     };
 
@@ -110,16 +110,42 @@ void GameBoard::initializeBoard(int difficulty) {
                     {"#", ".", ".", "#", "I3", ".", "#"},
                     {"#", ".", "I1", ".", ".", ".", "#"},
                     {"#", "B", ".", "#", "P", "=", "#"},
-                    {"#", "-", ".", "#", ".", ".", "#"},
+                    {"#", "-", "-", "#", ".", ".", "#"},
                     {"#", "#", "#", "#", ".", ".", "#"},
-                    {"#", "I2", ".", ".", ".", ".", "#"},
+                    {"#", "I2", ".", ".", ".", "B", "."},
                     {"#", "#", "#", "#", "#", "#", "#"}
             },
     };
+    std::vector<std::vector<std::vector<std::string>>> boards5;
+    boards5 = {
+            {
+                    {"#", "X", "I1", "P", "#"},
+                    {"#", ".", ".", "=", "#"},
+                    {"#", "#", "#", "#", "#"},
+                    {"#", "#", "#", "#", "#"},
+                    {"#", "#", "#", "#", "#"}
+            },
+    };
+
+    inf_space = {
+            {".", ".", ".", ".", "."},
+            {".", ".", ".", ".", "."},
+            {".", ".", ".", ".", "."},
+            {".", ".", ".", ".", "."},
+            {".", ".", ".", ".", "."},
+    };
+    empty_space = {
+            {".", ".", ".", ".", "."},
+            {".", ".", ".", ".", "."},
+            {".", ".", ".", ".", "."},
+            {".", ".", ".", ".", "."},
+            {".", ".", ".", ".", "."},
+    };
     // 地图上标志的含义
     // #是墙  P是玩家  =是玩家的检测点  当玩家位于玩家检测点上时会变为p  B是箱子  -是箱子的检测点  当箱子位于箱子检测点上时变为b
-    // In是含有内部结构的箱子 n=1,2,3...   当含有内部结构的箱子位于检测点上变时为in  n=1,2,3...
-    // 创建地图时如果有In,n就对应该箱子内部结构的地图的序号，后面检索地图时使用I/i后面的n来检索地图的,如I1箱子的内部结构的地图放在第二个
+    // In是含有内部结构的箱子 n=1,2,3...   当含有内部结构的箱子位于检测点-上时变为in  n=1,2,3...
+    // 创建地图时如果有In,n就对应该箱子内部结构的地图的序号，后面检索地图时使用I/i后面的n来检索地图的,如I1箱子的内部结构的地图放在第一个
+    // X表示infinity space
 
     destinations.clear();
     contains.clear();
@@ -143,8 +169,8 @@ void GameBoard::initializeBoard(int difficulty) {
             // Greedy Snake
             boards = boards3;
             contains.emplace_back(0,0,1,1,0);
-            contains.emplace_back(0,1,1,4,0);
-            contains.emplace_back(0,2,1,5,0);
+            contains.emplace_back(0,1,1,3,0);
+            contains.emplace_back(0,2,1,4,0);
             break;
         case 4:
             // Multiple reference
@@ -155,6 +181,10 @@ void GameBoard::initializeBoard(int difficulty) {
             contains.emplace_back(3,1,6,1,3);
             contains.emplace_back(3,2,1,4,3);
             break;
+        case 5:
+            // Multiple infinite and multiple epsilon
+            boards = boards5;
+            contains.emplace_back(0,0,0,2,0);
     }
 
     for (int i = 0; i < boards.size(); ++i) {
@@ -173,13 +203,14 @@ void GameBoard::initializeBoard(int difficulty) {
                     checkRow = row;
                     checkCol = col;
                 }
+                if (boards[i][row][col] == "X"){
+                    infMap = i;
+                    infRow = row;
+                    infCol = col;
+                }
             }
         }
     }
-
-    
-    
-
 }
 
 void GameBoard::initializeBoard(std::string filename) {
@@ -346,7 +377,7 @@ void GameBoard::moveBox(char direction, int oldMap, int oldRow, int oldCol, int 
     // 检测箱子被推到的位置是否出界或撞墙
     if (newBoxRow >= 0 && newBoxRow < boards[newBoxMap].size() &&
         newBoxCol >= 0 && newBoxCol < boards[newBoxMap][0].size() &&
-        boards[newBoxMap][newBoxRow][newBoxCol] != "#") {
+        boards[newBoxMap][newBoxRow][newBoxCol] != "#" && boards[newBoxMap][newBoxRow][newBoxCol] != "X") {
 
         // 如果箱子移动方向紧挨着另一个箱子
         // 递归判断另一个箱子是否能移动，如果能则移动，不能将isValidMove设为false，表示前一个箱子不能移动
@@ -480,7 +511,7 @@ void GameBoard::enterInternalBox(char direction, int oldRow, int oldCol, int old
     }
 
     // 判断能否进入有内部结构的箱子
-    if (boards[boxId][r][c] != "#") {
+    if (boards[boxId][r][c] != "#" && boards[boxId][r][c] != "X") {
         // 内部箱子边缘入口处是空地或检测点
         if (boards[boxId][r][c] == "." || boards[boxId][r][c] == "-" || boards[boxId][r][c] == "=") {
             // 进来的是玩家
@@ -611,199 +642,521 @@ void GameBoard::leaveInternalBox(char direction, int oldMap, int oldRow, int old
     int newCol;
 
     isLeave = true;
-    // 遍历contains，检索并计算走出之后的地图和在地图中的位置，并进行移动
-    for (auto& tuple : contains) {
-        // 找到了该有内部结构的箱子对应的数据
-        if (std::get<1>(tuple) == oldMap && std::get<0>(tuple) == std::get<4>(tuple)) {
-            // 获取走出之后新地图的序号和在新地图中的位置
-            newMap = std::get<4>(tuple);
-            switch (direction) {
-                case 'W':
-                    newRow = std::get<2>(tuple) - 1;
-                    newCol = std::get<3>(tuple);
-                    break;
-                case 'S':
-                    newRow = std::get<2>(tuple) + 1;
-                    newCol = std::get<3>(tuple);
-                    break;
-                case 'A':
-                    newRow = std::get<2>(tuple);
-                    newCol = std::get<3>(tuple) - 1;
-                    break;
-                case 'D':
-                    newRow = std::get<2>(tuple);
-                    newCol = std::get<3>(tuple) + 1;
-                    break;
+
+    if (oldMap == -1){
+        newMap = infMap;
+        switch (direction) {
+            case 'W':
+                newRow = infRow - 1;
+                newCol = infCol;
+                break;
+            case 'S':
+                newRow = infRow + 1;
+                newCol = infCol;
+                break;
+            case 'A':
+                newRow = infRow;
+                newCol = infCol - 1;
+                break;
+            case 'D':
+                newRow = infRow;
+                newCol = infCol + 1;
+                break;
+        }
+        // 判断是否会一直离开,如果是,进入inf
+        if (newRow < 0 || newRow >= boards[newMap].size() || newCol < 0 || newCol >= boards[newMap][0].size()) {
+            if (newMap == oldMap) {
+                inf_space[2][2] = boards[oldMap][oldRow][oldCol];
+                if (boards[oldMap][oldRow][oldCol] == "P") {
+                    playerMap = -1;
+                    playerRow = 2;
+                    playerCol = 2;
+                } else if (boards[oldMap][oldRow][oldCol].substr(0, 1) == "I" ||
+                           boards[oldMap][oldRow][oldCol].substr(0, 1) == "i") {
+                    for (auto &tuple: contains) {
+                        if (std::get<1>(tuple) == std::stoi(boards[oldMap][oldRow][oldCol].substr(1, 2)) - 1 &&
+                            std::get<0>(tuple) == oldMap) {
+                            if (std::get<0>(tuple) == std::get<4>(tuple)) {
+                                std::get<0>(tuple) = -1;
+                                std::get<2>(tuple) = 2;
+                                std::get<3>(tuple) = 2;
+                                std::get<4>(tuple) = -1;
+                            } else {
+                                std::get<0>(tuple) = -1;
+                                std::get<2>(tuple) = 2;
+                                std::get<3>(tuple) = 2;
+                            }
+                        }
+                    }
+                }
+                boards[oldMap][oldRow][oldCol] = ".";
+                repaintDest();
             }
+        }
             // 判断能否走出有内部结构的箱子
-            if (boards[newMap][newRow][newCol] != "#") {
-                // 走出后的位置是普通箱子
-                if (boards[newMap][newRow][newCol] == "B" || boards[newMap][newRow][newCol] == "b") {
-                    moveBox(direction, oldMap, oldRow, oldCol, newMap, newRow, newCol);
-                    // 可以推动走出有内部结构的位置上的普通箱子,走出有内部结构的箱子
-                    if (isValidMove){
-                        // 走出去的是玩家
-                        if(oldMap == playerMap && oldRow == playerRow && oldCol == playerCol) {
-                            if (boards[newMap][newRow][newCol] == "="){
-                                boards[newMap][newRow][newCol] = "p";
-                            } else {
-                                boards[newMap][newRow][newCol] = "P";
-                            }
-                            if (boards[oldMap][oldRow][oldCol] == "P" || boards[oldMap][oldRow][oldCol] == "p") {
-                                boards[oldMap][oldRow][oldCol] = ".";
-                            }
-                            playerMap = newMap;
-                            playerRow = newRow;
-                            playerCol = newCol;
-                        }
-                        // 出去的是有内部结构的箱子
-                        else if (boards[oldMap][oldRow][oldCol].substr(0,1) == "I" || boards[oldMap][oldRow][oldCol].substr(0,1) == "i") {
-                            if (boards[newMap][newRow][newCol] == "-"){
-                                boards[newMap][newRow][newCol] = "i" + boards[oldMap][oldRow][oldCol].substr(1);
-                            } else {
-                                boards[newMap][newRow][newCol] = "I" + boards[oldMap][oldRow][oldCol].substr(1);
-                            }
-                            for (auto& tuple : contains) {
-                                if (std::get<1>(tuple) == std::stoi(boards[oldMap][oldRow][oldCol].substr(1, 2)) - 1 && std::get<0>(tuple) == oldMap) {
-                                    if (std::get<0>(tuple) == std::get<4>(tuple)) {
-                                        std::get<0>(tuple) = newMap;
-                                        std::get<2>(tuple) = newRow;
-                                        std::get<3>(tuple) = newCol;
-                                        std::get<4>(tuple) = newMap;
-                                    }else {
-                                        std::get<0>(tuple) = newMap;
-                                        std::get<2>(tuple) = newRow;
-                                        std::get<3>(tuple) = newCol;
-                                    }
-                                }
-                            }
-                            boards[oldMap][oldRow][oldCol] = ".";
-                        }
-                        // 出去的是普通箱子
-                        else {
-                            if (boards[newMap][newRow][newCol] == "-"){
-                                boards[newMap][newRow][newCol] = "b";
-                            } else {
-                                boards[newMap][newRow][newCol] = "B";
-                            }
-                            boards[oldMap][oldRow][oldCol] = ".";
-                        }
-                    }
-                }
-                // 走出后的位置是有内部结构的箱子
-                else if (boards[newMap][newRow][newCol].substr(0, 1) == "I" || boards[newMap][newRow][newCol].substr(0, 1) == "i"){
-                    moveInternalBox(direction, oldMap, oldRow, oldCol, newMap, newRow, newCol);
-                    // 可以推动走出有内部结构的位置上的有内部结构的箱子,走出有内部结构的箱子
-                    if (isValidMove && !isEnter){
-                        // 走出去的是玩家
-                        if(oldMap == playerMap && oldRow == playerRow && oldCol == playerCol) {
-                            if (boards[newMap][newRow][newCol] == "="){
-                                boards[newMap][newRow][newCol] = "p";
-                            } else {
-                                boards[newMap][newRow][newCol] = "P";
-                            }
-                            if (boards[oldMap][oldRow][oldCol] == "P" || boards[oldMap][oldRow][oldCol] == "p") {
-                                boards[oldMap][oldRow][oldCol] = ".";
-                            }
-                            playerMap = newMap;
-                            playerRow = newRow;
-                            playerCol = newCol;
-                        }
-                        // 出去的是有内部结构的箱子
-                        else if (boards[oldMap][oldRow][oldCol].substr(0,1) == "I" || boards[oldMap][oldRow][oldCol].substr(0,1) == "i") {
-                            if (boards[newMap][newRow][newCol] == "-"){
-                                boards[newMap][newRow][newCol] = "i" + boards[oldMap][oldRow][oldCol].substr(1);
-                            } else {
-                                boards[newMap][newRow][newCol] = "I" + boards[oldMap][oldRow][oldCol].substr(1);
-                            }
-                            for (auto& tuple : contains) {
-                                if (std::get<1>(tuple) == std::stoi(boards[oldMap][oldRow][oldCol].substr(1, 2)) - 1 && std::get<0>(tuple) == oldMap) {
-                                    if (std::get<0>(tuple) == std::get<4>(tuple)) {
-                                        std::get<0>(tuple) = newMap;
-                                        std::get<2>(tuple) = newRow;
-                                        std::get<3>(tuple) = newCol;
-                                        std::get<4>(tuple) = newMap;
-                                    }else {
-                                        std::get<0>(tuple) = newMap;
-                                        std::get<2>(tuple) = newRow;
-                                        std::get<3>(tuple) = newCol;
-                                    }
-                                }
-                            }
-                            boards[oldMap][oldRow][oldCol] = ".";
-                        }
-                        // 出去的是普通箱子
-                        else {
-                            if (boards[newMap][newRow][newCol] == "-"){
-                                boards[newMap][newRow][newCol] = "b";
-                            } else {
-                                boards[newMap][newRow][newCol] = "B";
-                            }
-                            boards[oldMap][oldRow][oldCol] = ".";
-                        }
-                    }
-                    // 走出的位置是有内部结构的箱子，且该有内部结构的箱子无法移动，尝试进入该有内部结构的箱子
-                    else if (!isEnter){
-                        enterInternalBox(direction, oldRow, oldCol, oldMap, newRow, newCol);
-                    }
-                }
-                //走出后的位置为空地或检测点
-                else {
+        else if (boards[newMap][newRow][newCol] != "#") {
+            // 走出后的位置是普通箱子
+            if (boards[newMap][newRow][newCol] == "B" || boards[newMap][newRow][newCol] == "b") {
+                moveBox(direction, oldMap, oldRow, oldCol, newMap, newRow, newCol);
+                // 可以推动走出有内部结构的位置上的普通箱子,走出有内部结构的箱子
+                if (isValidMove) {
                     // 走出去的是玩家
-                    if(oldMap == playerMap && oldRow == playerRow && oldCol == playerCol) {
-                        if (boards[newMap][newRow][newCol] == "="){
+                    if (oldMap == playerMap && oldRow == playerRow && oldCol == playerCol) {
+                        if (boards[newMap][newRow][newCol] == "=") {
                             boards[newMap][newRow][newCol] = "p";
                         } else {
                             boards[newMap][newRow][newCol] = "P";
                         }
-                        if (boards[oldMap][oldRow][oldCol] == "P" || boards[oldMap][oldRow][oldCol] == "p") {
-                            boards[oldMap][oldRow][oldCol] = ".";
-                        }
+                        inf_space[oldRow][oldCol] = ".";
                         playerMap = newMap;
                         playerRow = newRow;
                         playerCol = newCol;
                     }
-                    // 出去的是有内部结构的箱子
-                    else if (boards[oldMap][oldRow][oldCol].substr(0,1) == "I" || boards[oldMap][oldRow][oldCol].substr(0,1) == "i") {
-                        if (boards[newMap][newRow][newCol] == "-"){
-                            boards[newMap][newRow][newCol] = "i" + boards[oldMap][oldRow][oldCol].substr(1);
+                        // 出去的是有内部结构的箱子
+                    else if (boards[oldMap][oldRow][oldCol].substr(0, 1) == "I" ||
+                             boards[oldMap][oldRow][oldCol].substr(0, 1) == "i") {
+                        if (boards[newMap][newRow][newCol] == "-") {
+                            boards[newMap][newRow][newCol] = "i" + inf_space[oldRow][oldCol].substr(1);
                         } else {
-                            boards[newMap][newRow][newCol] = "I" + boards[oldMap][oldRow][oldCol].substr(1);
+                            boards[newMap][newRow][newCol] = "I" + inf_space[oldRow][oldCol].substr(1);
                         }
-                        for (auto& tuple : contains) {
-                            if (std::get<1>(tuple) == std::stoi(boards[oldMap][oldRow][oldCol].substr(1, 2)) - 1 && std::get<0>(tuple) == oldMap) {
+                        for (auto &tuple: contains) {
+                            if (std::get<1>(tuple) ==
+                                std::stoi(inf_space[oldRow][oldCol].substr(1, 2)) - 1 &&
+                                std::get<0>(tuple) == oldMap) {
                                 if (std::get<0>(tuple) == std::get<4>(tuple)) {
                                     std::get<0>(tuple) = newMap;
                                     std::get<2>(tuple) = newRow;
                                     std::get<3>(tuple) = newCol;
                                     std::get<4>(tuple) = newMap;
-                                }else {
+                                } else {
                                     std::get<0>(tuple) = newMap;
                                     std::get<2>(tuple) = newRow;
                                     std::get<3>(tuple) = newCol;
                                 }
                             }
                         }
-                        boards[oldMap][oldRow][oldCol] = ".";
+                        inf_space[oldRow][oldCol] = ".";
                     }
-                    // 出去的是普通箱子
+                        // 出去的是普通箱子
                     else {
-                        if (boards[newMap][newRow][newCol] == "-"){
+                        if (boards[newMap][newRow][newCol] == "-") {
                             boards[newMap][newRow][newCol] = "b";
                         } else {
                             boards[newMap][newRow][newCol] = "B";
                         }
-                        boards[oldMap][oldRow][oldCol] = ".";
+                        inf_space[oldRow][oldCol] = ".";
                     }
                 }
+            }
+                // 走出后的位置是有内部结构的箱子
+            else if (boards[newMap][newRow][newCol].substr(0, 1) == "I" ||
+                     boards[newMap][newRow][newCol].substr(0, 1) == "i") {
+                moveInternalBox(direction, oldMap, oldRow, oldCol, newMap, newRow, newCol);
+                // 可以推动走出有内部结构的位置上的有内部结构的箱子,走出有内部结构的箱子
+                if (isValidMove && !isEnter) {
+                    // 走出去的是玩家
+                    if (oldMap == playerMap && oldRow == playerRow && oldCol == playerCol) {
+                        if (boards[newMap][newRow][newCol] == "=") {
+                            boards[newMap][newRow][newCol] = "p";
+                        } else {
+                            boards[newMap][newRow][newCol] = "P";
+                        }
+                        inf_space[oldRow][oldCol] = ".";
+                        playerMap = newMap;
+                        playerRow = newRow;
+                        playerCol = newCol;
+                    }
+                        // 出去的是有内部结构的箱子
+                    else if (boards[oldMap][oldRow][oldCol].substr(0, 1) == "I" ||
+                             boards[oldMap][oldRow][oldCol].substr(0, 1) == "i") {
+                        if (boards[newMap][newRow][newCol] == "-") {
+                            boards[newMap][newRow][newCol] = "i" + inf_space[oldRow][oldCol].substr(1);
+                        } else {
+                            boards[newMap][newRow][newCol] = "I" + inf_space[oldRow][oldCol].substr(1);
+                        }
+                        for (auto &tuple: contains) {
+                            if (std::get<1>(tuple) ==
+                                std::stoi(inf_space[oldRow][oldCol].substr(1, 2)) - 1 &&
+                                std::get<0>(tuple) == oldMap) {
+                                if (std::get<0>(tuple) == std::get<4>(tuple)) {
+                                    std::get<0>(tuple) = newMap;
+                                    std::get<2>(tuple) = newRow;
+                                    std::get<3>(tuple) = newCol;
+                                    std::get<4>(tuple) = newMap;
+                                } else {
+                                    std::get<0>(tuple) = newMap;
+                                    std::get<2>(tuple) = newRow;
+                                    std::get<3>(tuple) = newCol;
+                                }
+                            }
+                        }
+                        inf_space[oldRow][oldCol] = ".";
+                    }
+                        // 出去的是普通箱子
+                    else {
+                        if (boards[newMap][newRow][newCol] == "-") {
+                            boards[newMap][newRow][newCol] = "b";
+                        } else {
+                            boards[newMap][newRow][newCol] = "B";
+                        }
+                        inf_space[oldRow][oldCol] = ".";
+                    }
+                }
+                    // 走出的位置是有内部结构的箱子，且该有内部结构的箱子无法移动，尝试进入该有内部结构的箱子
+                else if (!isEnter) {
+                    enterInternalBox(direction, oldRow, oldCol, oldMap, newRow, newCol);
+                }
+            }
+                //走出后的位置为空地或检测点
+            else if (boards[newMap][newRow][newCol] == "." || boards[newMap][newRow][newCol] == "-" ||
+                     boards[newMap][newRow][newCol] == "=") {
+                // 走出去的是玩家
+                if (oldMap == playerMap && oldRow == playerRow && oldCol == playerCol) {
+                    if (boards[newMap][newRow][newCol] == "=") {
+                        boards[newMap][newRow][newCol] = "p";
+                    } else {
+                        boards[newMap][newRow][newCol] = "P";
+                    }
+                    inf_space[oldRow][oldCol] = ".";
+                    playerMap = newMap;
+                    playerRow = newRow;
+                    playerCol = newCol;
+                }
+                    // 出去的是有内部结构的箱子
+                else if (boards[oldMap][oldRow][oldCol].substr(0, 1) == "I" ||
+                         boards[oldMap][oldRow][oldCol].substr(0, 1) == "i") {
+                    if (boards[newMap][newRow][newCol] == "-") {
+                        boards[newMap][newRow][newCol] = "i" + inf_space[oldRow][oldCol].substr(1);
+                    } else {
+                        boards[newMap][newRow][newCol] = "I" + inf_space[oldRow][oldCol].substr(1);
+                    }
+                    for (auto &tuple: contains) {
+                        if (std::get<1>(tuple) == std::stoi(inf_space[oldRow][oldCol].substr(1, 2)) - 1 &&
+                            std::get<0>(tuple) == oldMap) {
+                            if (std::get<0>(tuple) == std::get<4>(tuple)) {
+                                std::get<0>(tuple) = newMap;
+                                std::get<2>(tuple) = newRow;
+                                std::get<3>(tuple) = newCol;
+                                std::get<4>(tuple) = newMap;
+                            } else {
+                                std::get<0>(tuple) = newMap;
+                                std::get<2>(tuple) = newRow;
+                                std::get<3>(tuple) = newCol;
+                            }
+                        }
+                    }
+                    inf_space[oldRow][oldCol] = ".";
+                }
+                    // 出去的是普通箱子
+                else {
+                    if (boards[newMap][newRow][newCol] == "-") {
+                        boards[newMap][newRow][newCol] = "b";
+                    } else {
+                        boards[newMap][newRow][newCol] = "B";
+                    }
+                    inf_space[oldRow][oldCol] = ".";
+                }
+            }
+        } else {
+            this->isValidMove = false;
+            this->isLeave = false;
+            std::cout << "Cannot leave the inf_space. Try again.\n";
+        }
+    } else if (oldMap >= 0) {
+        // 遍历contains，检索并计算走出之后的地图和在地图中的位置，并进行移动
+        bool isContain = false;
+        for (auto &tuple: contains) {
+            // 找到了该有内部结构的箱子对应的数据
+            if (std::get<1>(tuple) == oldMap && std::get<0>(tuple) == std::get<4>(tuple)) {
+                isContain = true;
+                // 获取走出之后新地图的序号和在新地图中的位置
+                newMap = std::get<4>(tuple);
+                switch (direction) {
+                    case 'W':
+                        newRow = std::get<2>(tuple) - 1;
+                        newCol = std::get<3>(tuple);
+                        break;
+                    case 'S':
+                        newRow = std::get<2>(tuple) + 1;
+                        newCol = std::get<3>(tuple);
+                        break;
+                    case 'A':
+                        newRow = std::get<2>(tuple);
+                        newCol = std::get<3>(tuple) - 1;
+                        break;
+                    case 'D':
+                        newRow = std::get<2>(tuple);
+                        newCol = std::get<3>(tuple) + 1;
+                        break;
+                }
+                if (newMap >= 0) {
+                    // 判断是否会一直离开,如果是,进入inf
+                    if (newRow < 0 || newRow >= boards[newMap].size() || newCol < 0 ||
+                        newCol >= boards[newMap][0].size()) {
+                        if (newMap == oldMap) {
+                            inf_space[2][2] = boards[oldMap][oldRow][oldCol];
+                            if (boards[oldMap][oldRow][oldCol] == "P") {
+                                playerMap = -1;
+                                playerRow = 2;
+                                playerCol = 2;
+                            } else if (boards[oldMap][oldRow][oldCol].substr(0, 1) == "I" ||
+                                       boards[oldMap][oldRow][oldCol].substr(0, 1) == "i") {
+                                for (auto &tuple: contains) {
+                                    if (std::get<1>(tuple) ==
+                                        std::stoi(boards[oldMap][oldRow][oldCol].substr(1, 2)) - 1 &&
+                                        std::get<0>(tuple) == oldMap) {
+                                        if (std::get<0>(tuple) == std::get<4>(tuple)) {
+                                            std::get<0>(tuple) = -1;
+                                            std::get<2>(tuple) = 2;
+                                            std::get<3>(tuple) = 2;
+                                            std::get<4>(tuple) = -1;
+                                        } else {
+                                            std::get<0>(tuple) = -1;
+                                            std::get<2>(tuple) = 2;
+                                            std::get<3>(tuple) = 2;
+                                        }
+                                    }
+                                }
+                            }
+                            boards[oldMap][oldRow][oldCol] = ".";
+                            repaintDest();
+                        }
+                    }
+                        // 判断能否走出有内部结构的箱子
+                    else if (boards[newMap][newRow][newCol] != "#" && boards[newMap][newRow][newCol] != "X") {
+                        // 走出后的位置是普通箱子
+                        if (boards[newMap][newRow][newCol] == "B" || boards[newMap][newRow][newCol] == "b") {
+                            moveBox(direction, oldMap, oldRow, oldCol, newMap, newRow, newCol);
+                            // 可以推动走出有内部结构的位置上的普通箱子,走出有内部结构的箱子
+                            if (isValidMove) {
+                                // 走出去的是玩家
+                                if (oldMap == playerMap && oldRow == playerRow && oldCol == playerCol) {
+                                    if (boards[newMap][newRow][newCol] == "=") {
+                                        boards[newMap][newRow][newCol] = "p";
+                                    } else {
+                                        boards[newMap][newRow][newCol] = "P";
+                                    }
+                                    if (boards[oldMap][oldRow][oldCol] == "P" ||
+                                        boards[oldMap][oldRow][oldCol] == "p") {
+                                        boards[oldMap][oldRow][oldCol] = ".";
+                                    }
+                                    playerMap = newMap;
+                                    playerRow = newRow;
+                                    playerCol = newCol;
+                                }
+                                    // 出去的是有内部结构的箱子
+                                else if (boards[oldMap][oldRow][oldCol].substr(0, 1) == "I" ||
+                                         boards[oldMap][oldRow][oldCol].substr(0, 1) == "i") {
+                                    if (boards[newMap][newRow][newCol] == "-") {
+                                        boards[newMap][newRow][newCol] = "i" + boards[oldMap][oldRow][oldCol].substr(1);
+                                    } else {
+                                        boards[newMap][newRow][newCol] = "I" + boards[oldMap][oldRow][oldCol].substr(1);
+                                    }
+                                    for (auto &tuple: contains) {
+                                        if (std::get<1>(tuple) ==
+                                            std::stoi(boards[oldMap][oldRow][oldCol].substr(1, 2)) - 1 &&
+                                            std::get<0>(tuple) == oldMap) {
+                                            if (std::get<0>(tuple) == std::get<4>(tuple)) {
+                                                std::get<0>(tuple) = newMap;
+                                                std::get<2>(tuple) = newRow;
+                                                std::get<3>(tuple) = newCol;
+                                                std::get<4>(tuple) = newMap;
+                                            } else {
+                                                std::get<0>(tuple) = newMap;
+                                                std::get<2>(tuple) = newRow;
+                                                std::get<3>(tuple) = newCol;
+                                            }
+                                        }
+                                    }
+                                    boards[oldMap][oldRow][oldCol] = ".";
+                                }
+                                    // 出去的是普通箱子
+                                else {
+                                    if (boards[newMap][newRow][newCol] == "-") {
+                                        boards[newMap][newRow][newCol] = "b";
+                                    } else {
+                                        boards[newMap][newRow][newCol] = "B";
+                                    }
+                                    boards[oldMap][oldRow][oldCol] = ".";
+                                }
+                            }
+                        }
+                            // 走出后的位置是有内部结构的箱子
+                        else if (boards[newMap][newRow][newCol].substr(0, 1) == "I" ||
+                                 boards[newMap][newRow][newCol].substr(0, 1) == "i") {
+                            moveInternalBox(direction, oldMap, oldRow, oldCol, newMap, newRow, newCol);
+                            // 可以推动走出有内部结构的位置上的有内部结构的箱子,走出有内部结构的箱子
+                            if (isValidMove && !isEnter) {
+                                // 走出去的是玩家
+                                if (oldMap == playerMap && oldRow == playerRow && oldCol == playerCol) {
+                                    if (boards[newMap][newRow][newCol] == "=") {
+                                        boards[newMap][newRow][newCol] = "p";
+                                    } else {
+                                        boards[newMap][newRow][newCol] = "P";
+                                    }
+                                    if (boards[oldMap][oldRow][oldCol] == "P" ||
+                                        boards[oldMap][oldRow][oldCol] == "p") {
+                                        boards[oldMap][oldRow][oldCol] = ".";
+                                    }
+                                    playerMap = newMap;
+                                    playerRow = newRow;
+                                    playerCol = newCol;
+                                }
+                                    // 出去的是有内部结构的箱子
+                                else if (boards[oldMap][oldRow][oldCol].substr(0, 1) == "I" ||
+                                         boards[oldMap][oldRow][oldCol].substr(0, 1) == "i") {
+                                    if (boards[newMap][newRow][newCol] == "-") {
+                                        boards[newMap][newRow][newCol] = "i" + boards[oldMap][oldRow][oldCol].substr(1);
+                                    } else {
+                                        boards[newMap][newRow][newCol] = "I" + boards[oldMap][oldRow][oldCol].substr(1);
+                                    }
+                                    for (auto &tuple: contains) {
+                                        if (std::get<1>(tuple) ==
+                                            std::stoi(boards[oldMap][oldRow][oldCol].substr(1, 2)) - 1 &&
+                                            std::get<0>(tuple) == oldMap) {
+                                            if (std::get<0>(tuple) == std::get<4>(tuple)) {
+                                                std::get<0>(tuple) = newMap;
+                                                std::get<2>(tuple) = newRow;
+                                                std::get<3>(tuple) = newCol;
+                                                std::get<4>(tuple) = newMap;
+                                            } else {
+                                                std::get<0>(tuple) = newMap;
+                                                std::get<2>(tuple) = newRow;
+                                                std::get<3>(tuple) = newCol;
+                                            }
+                                        }
+                                    }
+                                    boards[oldMap][oldRow][oldCol] = ".";
+                                }
+                                    // 出去的是普通箱子
+                                else {
+                                    if (boards[newMap][newRow][newCol] == "-") {
+                                        boards[newMap][newRow][newCol] = "b";
+                                    } else {
+                                        boards[newMap][newRow][newCol] = "B";
+                                    }
+                                    boards[oldMap][oldRow][oldCol] = ".";
+                                }
+                            }
+                                // 走出的位置是有内部结构的箱子，且该有内部结构的箱子无法移动，尝试进入该有内部结构的箱子
+                            else if (!isEnter) {
+                                enterInternalBox(direction, oldRow, oldCol, oldMap, newRow, newCol);
+                            }
+                        }
+                            //走出后的位置为空地或检测点
+                        else if (boards[newMap][newRow][newCol] == "." || boards[newMap][newRow][newCol] == "-" ||
+                                 boards[newMap][newRow][newCol] == "=" || boards[newMap][newRow][newCol] == "P" ||
+                                 boards[newMap][newRow][newCol] == "p") {
+                            // 走出去的是玩家
+                            if (oldMap == playerMap && oldRow == playerRow && oldCol == playerCol) {
+                                if (boards[newMap][newRow][newCol] == "=") {
+                                    boards[newMap][newRow][newCol] = "p";
+                                } else {
+                                    boards[newMap][newRow][newCol] = "P";
+                                }
+                                if (boards[oldMap][oldRow][oldCol] == "P" || boards[oldMap][oldRow][oldCol] == "p") {
+                                    boards[oldMap][oldRow][oldCol] = ".";
+                                }
+                                playerMap = newMap;
+                                playerRow = newRow;
+                                playerCol = newCol;
+                            }
+                                // 出去的是有内部结构的箱子
+                            else if (boards[oldMap][oldRow][oldCol].substr(0, 1) == "I" ||
+                                     boards[oldMap][oldRow][oldCol].substr(0, 1) == "i") {
+                                if (boards[newMap][newRow][newCol] == "-") {
+                                    boards[newMap][newRow][newCol] = "i" + boards[oldMap][oldRow][oldCol].substr(1);
+                                } else {
+                                    boards[newMap][newRow][newCol] = "I" + boards[oldMap][oldRow][oldCol].substr(1);
+                                }
+                                for (auto &tuple: contains) {
+                                    if (std::get<1>(tuple) ==
+                                        std::stoi(boards[oldMap][oldRow][oldCol].substr(1, 2)) - 1 &&
+                                        std::get<0>(tuple) == oldMap) {
+                                        if (std::get<0>(tuple) == std::get<4>(tuple)) {
+                                            std::get<0>(tuple) = newMap;
+                                            std::get<2>(tuple) = newRow;
+                                            std::get<3>(tuple) = newCol;
+                                            std::get<4>(tuple) = newMap;
+                                        } else {
+                                            std::get<0>(tuple) = newMap;
+                                            std::get<2>(tuple) = newRow;
+                                            std::get<3>(tuple) = newCol;
+                                        }
+                                    }
+                                }
+                                boards[oldMap][oldRow][oldCol] = ".";
+                            }
+                                // 出去的是普通箱子
+                            else {
+                                if (boards[newMap][newRow][newCol] == "-") {
+                                    boards[newMap][newRow][newCol] = "b";
+                                } else {
+                                    boards[newMap][newRow][newCol] = "B";
+                                }
+                                boards[oldMap][oldRow][oldCol] = ".";
+                            }
+                        }
+                    } else {
+                        this->isValidMove = false;
+                        this->isLeave = false;
+                        std::cout << "Cannot leave the box. Try again.\n";
+                    }
+                } else if (newMap == -1) {
+                    // 进入infinity space中的新位置是空地
+                    if (inf_space[newRow][newCol] == ".") {
+                        // 出去的是玩家
+                        if (oldMap == playerMap && oldRow == playerRow && oldCol == playerCol) {
+                            inf_space[newRow][newCol] = "P";
+                            if (boards[oldMap][oldRow][oldCol] == "P" || boards[oldMap][oldRow][oldCol] == "p") {
+                                boards[oldMap][oldRow][oldCol] = ".";
+                            }
+                            playerMap = newMap;
+                            playerRow = newRow;
+                            playerCol = newCol;
+                        }
+                        // 出去的是有内部结构的箱子
+                        else if (boards[oldMap][oldRow][oldCol].substr(0, 1) == "I" ||
+                                  boards[oldMap][oldRow][oldCol].substr(0, 1) == "i") {
+                            inf_space[newRow][newCol] = "I" + boards[oldMap][oldRow][oldCol].substr(1);
+                            for (auto &tuple: contains) {
+                                if (std::get<1>(tuple) ==
+                                    std::stoi(boards[oldMap][oldRow][oldCol].substr(1, 2)) - 1 &&
+                                    std::get<0>(tuple) == oldMap) {
+                                    if (std::get<0>(tuple) == std::get<4>(tuple)) {
+                                        std::get<0>(tuple) = newMap;
+                                        std::get<2>(tuple) = newRow;
+                                        std::get<3>(tuple) = newCol;
+                                        std::get<4>(tuple) = newMap;
+                                    } else {
+                                        std::get<0>(tuple) = newMap;
+                                        std::get<2>(tuple) = newRow;
+                                        std::get<3>(tuple) = newCol;
+                                    }
+                                }
+                            }
+                            boards[oldMap][oldRow][oldCol] = ".";
+                        }
+                    }
+                }
+            }
+        }
+        if (!isContain) {
+            std::cout << "No box contain this box. Enter the empty space.\n";
+            if (boards[oldMap][oldRow][oldCol] == "P" || boards[oldMap][oldRow][oldCol] == "p") {
+                empty_space[2][2] = "P";
+                playerMap = -2;
+                playerRow = 2;
+                playerCol = 2;
+                boards[oldMap][oldRow][oldCol] = ".";
+                repaintDest();
             } else {
-                this -> isValidMove = false;
-                this -> isLeave = false;
-                std::cout << "Cannot leave the box. Try again.\n";
+                boards[oldMap][oldRow][oldCol] = ".";
+                repaintDest();
             }
         }
     }
-    repaintDest();
 }
 
 
@@ -832,7 +1185,7 @@ void GameBoard::moveInternalBox(char direction, int oldMap, int oldRow, int oldC
     // 判断新位置是否合法
     if (newBoxRow >= 0 && newBoxRow < boards[newBoxMap].size() &&
         newBoxCol >= 0 && newBoxCol < boards[newBoxMap][0].size() &&
-        boards[newBoxMap][newBoxRow][newBoxCol] != "#") {
+        boards[newBoxMap][newBoxRow][newBoxCol] != "#" && boards[newBoxMap][newBoxRow][newBoxCol] != "X") {
 
         // 如果有内部结构的箱子移动方向紧挨着另一个箱子
         // 递归判断另一个箱子是否能移动，如果能则移动，不能将isValidMove设为false
@@ -1017,91 +1370,116 @@ void GameBoard::movePlayer(char direction) {
     isValidMove = true;
     isEnter = false;
     isLeave = false;
+    if (playerMap != -1 && playerMap != -2) {
+        // 检查玩家要移动的新位置是否合法
+        if (newPlayerRow >= 0 && newPlayerRow < boards[newPlayerMap].size() &&
+            newPlayerCol >= 0 && newPlayerCol < boards[newPlayerMap][0].size() &&
+            boards[newPlayerMap][newPlayerRow][newPlayerCol] != "#" && boards[newPlayerMap][newPlayerRow][newPlayerCol] != "X") {
 
-    // 检查玩家要移动的新位置是否合法
-    if (newPlayerRow >= 0 && newPlayerRow < boards[newPlayerMap].size() &&
-        newPlayerCol >= 0 && newPlayerCol < boards[newPlayerMap][0].size() &&
-        boards[newPlayerMap][newPlayerRow][newPlayerCol] != "#") {
-
-        // 如果新位置是普通箱子
-        if (boards[newPlayerMap][newPlayerRow][newPlayerCol] == "B"
-        || boards[newPlayerMap][newPlayerRow][newPlayerCol] == "b") {
-            moveBox(direction, playerMap, playerRow, playerCol, newPlayerMap, newPlayerRow, newPlayerCol);
-            // 新位置上的普通箱子可以被推动
-            if (isValidMove){
-                // 更新玩家位置
+            // 如果新位置是普通箱子
+            if (boards[newPlayerMap][newPlayerRow][newPlayerCol] == "B"
+                || boards[newPlayerMap][newPlayerRow][newPlayerCol] == "b") {
+                moveBox(direction, playerMap, playerRow, playerCol, newPlayerMap, newPlayerRow, newPlayerCol);
+                // 新位置上的普通箱子可以被推动
+                if (isValidMove) {
+                    // 更新玩家位置
+                    if (boards[newPlayerMap][newPlayerRow][newPlayerCol] == "=") {
+                        boards[newPlayerMap][newPlayerRow][newPlayerCol] = "p";
+                    } else {
+                        boards[newPlayerMap][newPlayerRow][newPlayerCol] = "P";
+                    }
+                    if (boards[playerMap][playerRow][playerCol] == "P" ||
+                        boards[playerMap][playerRow][playerCol] == "p") {
+                        boards[playerMap][playerRow][playerCol] = ".";
+                    }
+                    playerMap = newPlayerMap;
+                    playerRow = newPlayerRow;
+                    playerCol = newPlayerCol;
+                }
+            }
+                // 如果新位置是有内部结构的箱子
+            else if (boards[newPlayerMap][newPlayerRow][newPlayerCol].substr(0, 1) == "I"
+                     || boards[newPlayerMap][newPlayerRow][newPlayerCol].substr(0, 1) == "i") {
+                moveInternalBox(direction, playerMap, playerRow, playerCol, newPlayerMap, newPlayerRow, newPlayerCol);
+                // 如果可以推动有内部结构的箱子并且玩家没有进入有内部结构的箱子,进入的话会自动更新玩家位置
+                if (isValidMove && !isEnter) {
+                    // 更新玩家位置
+                    if (boards[newPlayerMap][newPlayerRow][newPlayerCol] == "=") {
+                        boards[newPlayerMap][newPlayerRow][newPlayerCol] = "p";
+                    } else {
+                        boards[newPlayerMap][newPlayerRow][newPlayerCol] = "P";
+                    }
+                    if (boards[playerMap][playerRow][playerCol] == "P" ||
+                        boards[playerMap][playerRow][playerCol] == "p") {
+                        boards[playerMap][playerRow][playerCol] = ".";
+                    }
+                    playerMap = newPlayerMap;
+                    playerRow = newPlayerRow;
+                    playerCol = newPlayerCol;
+                }
+                    // 无法推动有内部结构的箱子并且玩家没有进入有内部结构的箱子
+                else if (!isValidMove && !isEnter) {
+                    // 尝试进入有内部结构的箱子
+                    enterInternalBox(direction, playerRow, playerCol, playerMap, newPlayerRow, newPlayerCol);
+                }
+            }
+                // 玩家要移动到的位置是空地或检测点
+            else {
+                //旧位置更新为空
+                if (boards[playerMap][playerRow][playerCol] == "P" || boards[playerMap][playerRow][playerCol] == "p") {
+                    boards[playerMap][playerRow][playerCol] = ".";
+                }
+                //更新玩家新位置
+                playerMap = newPlayerMap;
+                playerRow = newPlayerRow;
+                playerCol = newPlayerCol;
                 if (boards[newPlayerMap][newPlayerRow][newPlayerCol] == "=") {
                     boards[newPlayerMap][newPlayerRow][newPlayerCol] = "p";
                 } else {
                     boards[newPlayerMap][newPlayerRow][newPlayerCol] = "P";
                 }
-                if (boards[playerMap][playerRow][playerCol] == "P" || boards[playerMap][playerRow][playerCol] == "p") {
-                    boards[playerMap][playerRow][playerCol] = ".";
-                }
-                playerMap = newPlayerMap;
-                playerRow = newPlayerRow;
-                playerCol = newPlayerCol;
             }
         }
-        // 如果新位置是有内部结构的箱子
-        else if(boards[newPlayerMap][newPlayerRow][newPlayerCol].substr(0,1) == "I"
-        || boards[newPlayerMap][newPlayerRow][newPlayerCol].substr(0,1) == "i"){
-            moveInternalBox(direction, playerMap, playerRow, playerCol, newPlayerMap, newPlayerRow, newPlayerCol);
-            // 如果可以推动有内部结构的箱子并且玩家没有进入有内部结构的箱子,进入的话会自动更新玩家位置
-            if (isValidMove && !isEnter){
-                // 更新玩家位置
-                if (boards[newPlayerMap][newPlayerRow][newPlayerCol] == "=") {
-                    boards[newPlayerMap][newPlayerRow][newPlayerCol] = "p";
-                } else {
-                    boards[newPlayerMap][newPlayerRow][newPlayerCol] = "P";
-                }
-                if (boards[playerMap][playerRow][playerCol] == "P" || boards[playerMap][playerRow][playerCol] == "p") {
-                    boards[playerMap][playerRow][playerCol] = ".";
-                }
-                playerMap = newPlayerMap;
-                playerRow = newPlayerRow;
-                playerCol = newPlayerCol;
-            }
-            // 无法推动有内部结构的箱子并且玩家没有进入有内部结构的箱子
-            else if (!isValidMove && !isEnter){
-                // 尝试进入有内部结构的箱子
-                enterInternalBox(direction, playerRow, playerCol, playerMap, newPlayerRow, newPlayerCol);
-            }
-        }
-        // 玩家要移动到的位置是空地或检测点
+            // 玩家走出地图界外，判断是否能够走出有递归结构的箱子
         else {
-            //旧位置更新为空
-            if (boards[playerMap][playerRow][playerCol] == "P" || boards[playerMap][playerRow][playerCol] == "p") {
-                boards[playerMap][playerRow][playerCol] = ".";
-            }
-            //更新玩家新位置
-            playerMap = newPlayerMap;
-            playerRow = newPlayerRow;
-            playerCol = newPlayerCol;
-            if (boards[newPlayerMap][newPlayerRow][newPlayerCol] == "="){
-                boards[newPlayerMap][newPlayerRow][newPlayerCol] = "p";
+            if (newPlayerRow < 0 || newPlayerRow >= boards[newPlayerMap].size() ||
+                newPlayerCol < 0 || newPlayerCol >= boards[newPlayerMap][0].size()) {
+                leaveInternalBox(direction, playerMap, playerRow, playerCol);
             } else {
-                boards[newPlayerMap][newPlayerRow][newPlayerCol] = "P";
+                std::cout << "Invalid move. Try again.\n";
+            }
+        }
+        repaintDest();
+    } else {
+        if (playerMap == -1) {
+            if (newPlayerRow >= 0 && newPlayerRow < 5 && newPlayerCol >= 0 && newPlayerCol < 5) {
+                inf_space[playerRow][playerCol] = ".";
+                inf_space[newPlayerRow][newPlayerCol] = "P";
+                playerMap = newPlayerMap;
+                playerRow = newPlayerRow;
+                playerCol = newPlayerCol;
+            } else {
+                leaveInternalBox(direction, playerMap, playerRow, playerCol);
+            }
+        }
+        else if (playerMap == -2) {
+            if (newPlayerRow >= 0 && newPlayerRow < 5 && newPlayerCol >= 0 && newPlayerCol < 5) {
+                empty_space[playerRow][playerCol] = ".";
+                empty_space[newPlayerRow][newPlayerCol] = "P";
+                playerMap = newPlayerMap;
+                playerRow = newPlayerRow;
+                playerCol = newPlayerCol;
+            } else {
+                std::cout << "Can not leave the empty space!\n";
             }
         }
     }
-    // 玩家走出地图界外，判断是否能够走出有递归结构的箱子
-    else {
-        if (newPlayerRow < 0 || newPlayerRow >= boards[newPlayerMap].size() ||
-            newPlayerCol < 0 || newPlayerCol >= boards[newPlayerMap][0].size()){
-            leaveInternalBox(direction, playerMap, playerRow, playerCol);
-        } else {
-            std::cout << "Invalid move. Try again.\n";
-        }
-    }
-    repaintDest();
 }
 
 
 //打印所有地图状态
 void GameBoard::printBoard(int difficulty) const {
     std::cout << "Current level: " << difficulty << std::endl;
-    std::cout << '\n';
     std::cout << "| Map information:                                   |" << std::endl;
     std::cout << "| P: Player         p: Player on checkpoint          |" << std::endl;
     std::cout << "| B: Box            b: Box on storage point          |" << std::endl;
@@ -1111,7 +1489,6 @@ void GameBoard::printBoard(int difficulty) const {
     std::cout << "| Game operator:                                     |" << std::endl;
     std::cout << "| R: Restart        Q: Quit(Back to menu)            |" << std::endl;
     std::cout << "| W/A/S/D: Move                                      |" << std::endl;
-    std::cout << '\n';
     for (int map = 0; map < boards.size(); ++map) {
         for (int i = 0; i < boards[map].size(); i++) {
             for (int j = 0; j < boards[map][0].size(); j++) {
@@ -1121,50 +1498,68 @@ void GameBoard::printBoard(int difficulty) const {
         }
         std::cout << '\n';
     }
-    std::cout << '\n';
-
+    if (playerMap == -1 || inf_space[2][2] != "."){
+        std::cout << "infinity space" << std::endl;
+        for (int i = 0; i < 5; ++i) {
+            for (int j = 0; j < 5; ++j) {
+                std::cout << inf_space[i][j] << " ";
+            }
+            std::cout << '\n';
+        }
+        std::cout << '\n';
+    }
+    if (playerMap == -2 || empty_space[2][2] != "."){
+        std::cout << "empty space" << std::endl;
+        for (int i = 0; i < 5; ++i) {
+            for (int j = 0; j < 5; ++j) {
+                std::cout << empty_space[i][j] << " ";
+            }
+            std::cout << '\n';
+        }
+        std::cout << '\n';
+    }
 }
 
 void GameBoard::printBoard(std::string filename) const {
-    std::cout << "Current level: " << 5 << std::endl;
+    std::cout << "Current level: " << 6 << std::endl;
+    std::cout << "| Map information:                                   |" << std::endl;
+    std::cout << "| P: Player         p: Player on checkpoint          |" << std::endl;
+    std::cout << "| B: Box            b: Box on storage point          |" << std::endl;
+    std::cout << "| In: InternalBox   in: InternalBox on storage point |" << std::endl;
+    std::cout << "| =: Checkpoint     -: Storage point                 |" << std::endl;
+    std::cout << "| #: Wall                                            |" << std::endl;
+    std::cout << "| Game operator:                                     |" << std::endl;
+    std::cout << "| R: Restart        Q: Quit(Back to menu)            |" << std::endl;
+    std::cout << "| W/A/S/D: Move                                      |" << std::endl;
     for (int map = 0; map < boards.size(); ++map) {
         for (int i = 0; i < boards[map].size(); i++) {
             for (int j = 0; j < boards[map][0].size(); j++) {
                 std::cout << boards[map][i][j] << " ";
             }
-            if (map == 0) {
-                switch (i) {
-                    case 0:
-                        std::cout << " | P: Player  p: Player on checkpoint  |";
-                        break;
-                    case 1:
-                        std::cout << " | B: Box  b: Box on storage point     |";
-                        break;
-                    case 2:
-                        std::cout << " | =: Checkpoint  -: Storage point     |";
-                        break;
-                    case 3:
-                        std::cout << " | #: Wall                             |";
-                        break;
-                    case 4:
-                        std::cout << " | R: Restart                          |";
-                        break;
-                    case 5:
-                        std::cout << " | Q: Quit(Back to menu)               |";
-                        break;
-                    case 6:
-                        std::cout << " | W/A/S/D: Move                       |";
-                        break;
-                    default:
-                        break;
-                }
+            std::cout << '\n';
+        }
+        std::cout << '\n';
+    }
+    if (playerMap == -1 || inf_space[2][2] != "."){
+        std::cout << "infinity space" << std::endl;
+        for (int i = 0; i < 5; ++i) {
+            for (int j = 0; j < 5; ++j) {
+                std::cout << inf_space[i][j] << " ";
             }
             std::cout << '\n';
         }
         std::cout << '\n';
     }
-    std::cout << '\n';
-
+    if (playerMap == -2 || empty_space[2][2] != "."){
+        std::cout << "empty space" << std::endl;
+        for (int i = 0; i < 5; ++i) {
+            for (int j = 0; j < 5; ++j) {
+                std::cout << empty_space[i][j] << " ";
+            }
+            std::cout << '\n';
+        }
+        std::cout << '\n';
+    }
 }
 
 
