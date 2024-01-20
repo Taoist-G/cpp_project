@@ -1763,7 +1763,7 @@ void GameBoard::movePlayer(char direction) {
     isValidMove = true;
     isEnter = false;
     isLeave = false;
-    if (playerMap != -1 && playerMap != -2 &&playerMap!=-3) {
+    if (playerMap != -1 && playerMap != -2 && playerMap != -3) {
         // 检查玩家要移动的新位置是否合法
         if (newPlayerRow >= 0 && newPlayerRow < boards[newPlayerMap].size() &&
             newPlayerCol >= 0 && newPlayerCol < boards[newPlayerMap][0].size() &&
@@ -1909,7 +1909,7 @@ void GameBoard::printBoard(int difficulty) const {
     if (!haveBasicMap)
     {
         for (int map = 0; map < boards.size(); ++map) {
-            std::cout<<"I"<<map+1<<":"<<std::endl;
+            std::cout << "I" << map + 1 << ":" << std::endl;
             for (int i = 0; i < boards[map].size(); i++) {
                 for (int j = 0; j < boards[map][0].size(); j++) {
                     std::cout << boards[map][i][j] << " ";
@@ -1921,9 +1921,9 @@ void GameBoard::printBoard(int difficulty) const {
     }else{
         for (int map = 0; map < boards.size(); ++map) {
             if(map!=boards.size()-1){
-                std::cout<<"I"<<map+1<<":"<<std::endl;
+                std::cout << "I" << map + 1 << ":" << std::endl;
             }else{
-                std::cout<<"Basic Map"<<":"<<std::endl;
+                std::cout << "Basic Map" << ":" << std::endl;
             }
             for (int i = 0; i < boards[map].size(); i++) {
                 for (int j = 0; j < boards[map][0].size(); j++) {
@@ -2060,16 +2060,16 @@ bool GameBoard::isGameOver() const {
 //玩家每走一步，先是对前后的boards进行对比，找到有没有变化，有变化就对地图判断stack进行push(1)，所有变化位置和变化前元素存进地图stack，没变化push(0)。
 //同时对前后contains进行对比，找找有没有变化，有变化就对con判断stack进行push(1)，将变化前的contains存入con_stack，没变化push(0)
 void GameBoard::getChange(){
-    bool isChange=false;
+    bool isChange = false;
     for (int i = 0; i < boards.size(); i++)
     {
         for (int j = 0; j < boards[i].size(); j++)
         {
             for (int k = 0; k < boards[i][j].size(); k++)
             {
-                if (boards_old[i][j][k]!=boards[i][j][k])
+                if (boards_old[i][j][k] != boards[i][j][k])
                 {
-                    isChange=true;
+                    isChange = true;
                     boards_before change = {i,j,k,boards_old[i][j][k]};
                     before_vector.push_back(change);
                 } 
@@ -2088,7 +2088,7 @@ void GameBoard::getChange(){
     isChange=false;
     for (int i = 0; i < contains.size(); i++)
     {
-        if (contains_old[i]!=contains[i])
+        if (contains_old[i] != contains[i])
         {
             isChange=true;
         }
@@ -2106,9 +2106,9 @@ void GameBoard::getChange(){
     {
         for (int j = 0; j < inf_space[i].size(); j++)
         {
-            if (inf_space_old[i][j]!=inf_space[i][j])
+            if (inf_space_old[i][j] != inf_space[i][j])
             {
-                isChange=true;
+                isChange = true;
                 inf_empty_before change = {i,j,inf_space_old[i][j]};
                 before_infempty_vector.push_back(change);
             } 
@@ -2128,9 +2128,9 @@ void GameBoard::getChange(){
     {
         for (int j = 0; j < inf_space_2[i].size(); j++)
         {
-            if (inf2_space_old[i][j]!=inf_space_2[i][j])
+            if (inf2_space_old[i][j] != inf_space_2[i][j])
             {
-                isChange=true;
+                isChange = true;
                 inf_empty_before change = {i,j,inf2_space_old[i][j]};
                 before_infempty_vector.push_back(change);
             } 
@@ -2150,9 +2150,9 @@ void GameBoard::getChange(){
     {
         for (int j = 0; j < empty_space[i].size(); j++)
         {
-            if (empty_space_old[i][j]!=empty_space[i][j])
+            if (empty_space_old[i][j] != empty_space[i][j])
             {
-                isChange=true;
+                isChange = true;
                 inf_empty_before change = {i,j,empty_space_old[i][j]};
                 before_infempty_vector.push_back(change);
             } 
@@ -2167,11 +2167,11 @@ void GameBoard::getChange(){
         isEmptyChange.push(0);
     }
 
-    inf_space_old=inf_space;
-    inf2_space_old=inf_space_2;
-    empty_space_old=empty_space;
-    contains_old=contains;
-    boards_old=boards;
+    inf_space_old = inf_space;
+    inf2_space_old = inf_space_2;
+    empty_space_old = empty_space;
+    contains_old = contains;
+    boards_old = boards;
 }
 
 //在进行撤销时，先对两个判断stack进行top和pop，如果是0则跳过修改，如果是1对地图或con的stack分别top和pop。
@@ -2182,15 +2182,15 @@ void GameBoard::undo(){
         return;
     }
     
-    int isboardschange=isBoardsChange.top();
+    int isboardschange = isBoardsChange.top();
     isBoardsChange.pop();
-    int iscontainschange=isContainsChange.top();
+    int iscontainschange = isContainsChange.top();
     isContainsChange.pop();
-    int isinfchange=isInfChange.top();
+    int isinfchange = isInfChange.top();
     isInfChange.pop();
-    int isinf2change=isInf2Change.top();
+    int isinf2change = isInf2Change.top();
     isInf2Change.pop();
-    int isemptychange=isEmptyChange.top();
+    int isemptychange = isEmptyChange.top();
     isEmptyChange.pop();
     if (isboardschange)
     {
@@ -2199,15 +2199,15 @@ void GameBoard::undo(){
         boards_before change;
         for (int i = 0; i < before_vector.size(); i++)
         {
-            change=before_vector[i];
-            boards[change.x][change.y][change.z]=change.value;
+            change = before_vector[i];
+            boards[change.x][change.y][change.z] = change.value;
         }
     }
 
     if (iscontainschange)
     {
         contains.clear();
-        contains=containsStack.top();
+        contains = containsStack.top();
         containsStack.pop();
     }
 
@@ -2218,8 +2218,8 @@ void GameBoard::undo(){
         inf_empty_before change;
         for (int i = 0; i < before_infempty_vector.size(); i++)
         {
-            change=before_infempty_vector[i];
-            inf_space[change.x][change.y]=change.value;
+            change = before_infempty_vector[i];
+            inf_space[change.x][change.y] = change.value;
         }
     }
 
@@ -2230,8 +2230,8 @@ void GameBoard::undo(){
         inf_empty_before change;
         for (int i = 0; i < before_infempty_vector.size(); i++)
         {
-            change=before_infempty_vector[i];
-            inf_space_2[change.x][change.y]=change.value;
+            change = before_infempty_vector[i];
+            inf_space_2[change.x][change.y] = change.value;
         }
     }
 
@@ -2242,16 +2242,15 @@ void GameBoard::undo(){
         inf_empty_before change;
         for (int i = 0; i < before_infempty_vector.size(); i++)
         {
-            change=before_infempty_vector[i];
-            empty_space[change.x][change.y]=change.value;
+            change = before_infempty_vector[i];
+            empty_space[change.x][change.y] = change.value;
         }
     }
 
-    std::array<int,3>player_old=player.top();
+    std::array<int,3>player_old = player.top();
     player.pop();
     playerMap = player_old[0];
     playerRow = player_old[1];
     playerCol = player_old[2];
-    
 }
 
