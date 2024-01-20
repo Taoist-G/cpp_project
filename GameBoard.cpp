@@ -134,6 +134,13 @@ void GameBoard::initializeBoard(int difficulty) {
             {".", ".", ".", ".", "."},
             {".", ".", ".", ".", "."},
     };
+    inf_space_2 = {
+            {".", ".", ".", ".", "."},
+            {".", ".", ".", ".", "."},
+            {".", ".", ".", ".", "."},
+            {".", ".", ".", ".", "."},
+            {".", ".", ".", ".", "."},
+    };
     empty_space = {
             {".", ".", ".", ".", "."},
             {".", ".", ".", ".", "."},
@@ -208,15 +215,6 @@ void GameBoard::initializeBoard(int difficulty) {
                     infRow = row;
                     infCol = col;
                 }
-            }
-        }
-    }
-    for (int i = 0; i < 5; ++i) {
-        for (int j = 0; j < 5; ++j) {
-            if (inf_space[i][j] == "P") {
-                playerMap = -1;
-                playerRow = i;
-                playerCol = j;
             }
         }
     }
@@ -834,33 +832,26 @@ void GameBoard::leaveInternalBox(char direction, int oldMap, int oldRow, int old
         }
         // 判断是否会一直离开,如果是,进入inf
         if (newRow < 0 || newRow >= boards[newMap].size() || newCol < 0 || newCol >= boards[newMap][0].size()) {
-            if (newMap == oldMap) {
-                inf_space[2][2] = inf_space[oldRow][oldCol];
-                if (boards[oldMap][oldRow][oldCol] == "P") {
-                    playerMap = -1;
-                    playerRow = 2;
-                    playerCol = 2;
-                } else if (inf_space[oldRow][oldCol].substr(0, 1) == "I" ||
-                           inf_space[oldRow][oldCol].substr(0, 1) == "i") {
-                    for (auto &tuple: contains) {
-                        if (std::get<1>(tuple) == std::stoi(inf_space[oldRow][oldCol].substr(1, 2)) - 1 &&
-                            std::get<0>(tuple) == oldMap) {
-                            if (std::get<0>(tuple) == std::get<4>(tuple)) {
-                                std::get<0>(tuple) = -1;
-                                std::get<2>(tuple) = 2;
-                                std::get<3>(tuple) = 2;
-                                std::get<4>(tuple) = -1;
-                            } else {
-                                std::get<0>(tuple) = -1;
-                                std::get<2>(tuple) = 2;
-                                std::get<3>(tuple) = 2;
-                            }
-                        }
+            inf_space_2[2][2] = inf_space[oldRow][oldCol];
+            if (inf_space[oldRow][oldCol] == "P") {
+                playerMap = -2;
+                playerRow = 2;
+                playerCol = 2;
+            } else if (inf_space[oldRow][oldCol].substr(0, 1) == "I" ||
+                       inf_space[oldRow][oldCol].substr(0, 1) == "i") {
+                // 使用迭代器查找并删除满足条件的元素
+                for (auto it = contains.begin(); it != contains.end(); ) {
+                    if (std::get<1>(*it) == std::stoi(inf_space[oldRow][oldCol].substr(1, 2)) - 1 &&
+                        std::get<0>(*it) == oldMap) {
+                        it = contains.erase(it);  // 删除匹配的元素，并返回指向下一个元素的迭代器
+                    } else {
+                        ++it;  // 没有匹配时，移动到下一个元素
                     }
                 }
-                inf_space[oldRow][oldCol] = ".";
-                repaintDest();
             }
+            inf_space[oldRow][oldCol] = ".";
+            repaintDest();
+
         }
             // 判断能否走出有内部结构的箱子
         else if (boards[newMap][newRow][newCol] != "#") {
@@ -1315,7 +1306,7 @@ void GameBoard::leaveInternalBox(char direction, int oldMap, int oldRow, int old
             std::cout << "No box contain this box. Enter the empty space.\n";
             if (boards[oldMap][oldRow][oldCol] == "P" || boards[oldMap][oldRow][oldCol] == "p") {
                 empty_space[2][2] = "P";
-                playerMap = -2;
+                playerMap = -3;
                 playerRow = 2;
                 playerCol = 2;
                 boards[oldMap][oldRow][oldCol] = ".";
@@ -1673,6 +1664,17 @@ void GameBoard::movePlayer(char direction) {
         }
         else if (playerMap == -2) {
             if (newPlayerRow >= 0 && newPlayerRow < 5 && newPlayerCol >= 0 && newPlayerCol < 5) {
+                inf_space_2[playerRow][playerCol] = ".";
+                inf_space_2[newPlayerRow][newPlayerCol] = "P";
+                playerMap = newPlayerMap;
+                playerRow = newPlayerRow;
+                playerCol = newPlayerCol;
+            } else {
+                std::cout << "Can not leave the 2-infinity space!\n";
+            }
+        }
+        else if (playerMap == -3) {
+            if (newPlayerRow >= 0 && newPlayerRow < 5 && newPlayerCol >= 0 && newPlayerCol < 5) {
                 empty_space[playerRow][playerCol] = ".";
                 empty_space[newPlayerRow][newPlayerCol] = "P";
                 playerMap = newPlayerMap;
@@ -1717,7 +1719,17 @@ void GameBoard::printBoard(int difficulty) const {
         }
         std::cout << '\n';
     }
-    if (playerMap == -2 || empty_space[2][2] != "."){
+    if (playerMap == -2 || inf_space_2[2][2] != "."){
+        std::cout << "2-infinity space" << std::endl;
+        for (int i = 0; i < 5; ++i) {
+            for (int j = 0; j < 5; ++j) {
+                std::cout << inf_space_2[i][j] << " ";
+            }
+            std::cout << '\n';
+        }
+        std::cout << '\n';
+    }
+    if (playerMap == -3 || empty_space[2][2] != "."){
         std::cout << "empty space" << std::endl;
         for (int i = 0; i < 5; ++i) {
             for (int j = 0; j < 5; ++j) {
@@ -1759,7 +1771,17 @@ void GameBoard::printBoard(std::string filename) const {
         }
         std::cout << '\n';
     }
-    if (playerMap == -2 || empty_space[2][2] != "."){
+    if (playerMap == -2 || inf_space_2[2][2] != "."){
+        std::cout << "2-infinity space" << std::endl;
+        for (int i = 0; i < 5; ++i) {
+            for (int j = 0; j < 5; ++j) {
+                std::cout << inf_space_2[i][j] << " ";
+            }
+            std::cout << '\n';
+        }
+        std::cout << '\n';
+    }
+    if (playerMap == -3 || empty_space[2][2] != "."){
         std::cout << "empty space" << std::endl;
         for (int i = 0; i < 5; ++i) {
             for (int j = 0; j < 5; ++j) {

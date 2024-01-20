@@ -31,6 +31,7 @@ private:
     std::vector<std::vector<std::vector<std::string>>> boards;
     std::vector<std::vector<std::string>> empty_space;
     std::vector<std::vector<std::string>> inf_space;
+    std::vector<std::vector<std::string>> inf_space_2;
     std::vector<std::tuple<int, int, int>> destinations;
     // contains记录包含关系 第一个元素包含第二个元素 第一个和第二个元素是对应地图的序号
     // 第三第四个元素是第二个元素对应地图在第一个元素对应地图中的行和列
