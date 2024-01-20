@@ -9,6 +9,11 @@ struct boards_before {
     std::string value;
 };
 
+struct inf_empty_before {
+    int x, y;
+    std::string value;
+};
+
 class GameBoard {
 public:
     GameBoard(int difficulty);
@@ -41,12 +46,23 @@ private:
     std::stack<std::array<int,3>> player;
 
     std::vector<std::vector<std::vector<std::string>>> boards_old;
+    std::vector<std::vector<std::string>> empty_space_old;
+    std::vector<std::vector<std::string>> inf_space_old;
+    std::vector<std::vector<std::string>> inf2_space_old;
     std::vector<std::tuple<int, int, int, int,int>> contains_old;
     std::stack<int> isBoardsChange;
     std::stack<int> isContainsChange;
+    std::stack<int> isInfChange;
+    std::stack<int> isInf2Change;
+    std::stack<int> isEmptyChange;
 
     std::vector<boards_before> before_vector;
     std::stack<std::vector<boards_before>> boardsStack;
+
+    std::vector<inf_empty_before> before_infempty_vector;
+    std::stack<std::vector<inf_empty_before>> infStack;
+    std::stack<std::vector<inf_empty_before>> inf2Stack;
+    std::stack<std::vector<inf_empty_before>> emptyStack;
 
     std::stack<std::vector<std::tuple<int, int, int, int,int>>> containsStack;
 

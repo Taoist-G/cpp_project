@@ -1,2 +1,2 @@
-"C:\Program Files\JetBrains\CLion 2022.2.1\bin\cmake\win\bin\cmake.exe" -DCMAKE_BUILD_TYPE=Debug -G "CodeBlocks - MinGW Makefiles" -S E:\Desktop\学习\大三上学习\C艹\proj\proj_test -B E:\Desktop\学习\大三上学习\C艹\proj\proj_test\cmake-build-debug
+"C:\Program Files\JetBrains\CLion 2022.2.1\bin\cmake\win\bin\cmake.exe" -DCMAKE_BUILD_TYPE=Debug -G "CodeBlocks - MinGW Makefiles" -S E:\Desktop\学习\大三上学习\C艹\proj\cpp_project -B E:\Desktop\学习\大三上学习\C艹\proj\cpp_project\cmake-build-debug
 -- The C compiler identification is GNU 11.2.0

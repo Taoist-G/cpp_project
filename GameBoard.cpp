@@ -218,6 +218,33 @@ void GameBoard::initializeBoard(int difficulty) {
             }
         }
     }
+    for (int i = 0; i < 5; ++i) {
+        for (int j = 0; j < 5; ++j) {
+            if (inf_space[i][j] == "P") {
+                playerMap = -1;
+                playerRow = i;
+                playerCol = j;
+            }
+        }
+    }
+    for (int i = 0; i < 5; ++i) {
+        for (int j = 0; j < 5; ++j) {
+            if (inf_space_2[i][j] == "P") {
+                playerMap = -2;
+                playerRow = i;
+                playerCol = j;
+            }
+        }
+    }
+    for (int i = 0; i < 5; ++i) {
+        for (int j = 0; j < 5; ++j) {
+            if (empty_space[i][j] == "P") {
+                playerMap = -3;
+                playerRow = i;
+                playerCol = j;
+            }
+        }
+    }
 }
 
 void GameBoard::initializeBoard(std::string filename) {
@@ -234,6 +261,9 @@ void GameBoard::initializeBoard(std::string filename) {
     std::string line;
     bool isReadingBoards = false;
     bool isReadingContains = false;
+    bool isReadingInf = false;
+    bool isReadingInf2 = false;
+    bool isReadingEmpty = false;
     std::vector<std::vector<std::string>> currentMap;
 
     while (getline(inFile, line)) {
@@ -241,6 +271,9 @@ void GameBoard::initializeBoard(std::string filename) {
         if (line.find("[Map ") != std::string::npos) {
             isReadingBoards = true;
             isReadingContains = false;
+            isReadingInf = false;
+            isReadingInf2 = false;
+            isReadingEmpty = false;
             if (!currentMap.empty()) {
                 boards.push_back(currentMap);
                 currentMap.clear();
@@ -260,6 +293,9 @@ void GameBoard::initializeBoard(std::string filename) {
         if (line.find("[Contains]") != std::string::npos) {
             isReadingBoards = false;
             isReadingContains = true;
+            isReadingInf = false;
+            isReadingInf2 = false;
+            isReadingEmpty = false;
             continue;
         }
         // Check for contains end
@@ -267,6 +303,49 @@ void GameBoard::initializeBoard(std::string filename) {
             isReadingContains = false;
             continue;
         }
+        // Check for Inf start
+        if (line.find("[Inf_space Begin]") != std::string::npos) {
+            isReadingBoards = false;
+            isReadingContains = false;
+            isReadingInf = true;
+            isReadingInf2 = false;
+            isReadingEmpty = false;
+            continue;
+        }
+        // Check for Inf end
+        if (line.find("[Inf_space End]") != std::string::npos) {
+            isReadingInf = false;
+            continue;
+        }
+        // Check for Inf_2 start
+        if (line.find("[Inf_space_2 Begin]") != std::string::npos) {
+            isReadingBoards = false;
+            isReadingContains = false;
+            isReadingInf = false;
+            isReadingInf2 = true;
+            isReadingEmpty = false;
+            continue;
+        }
+        // Check for Inf_2 end
+        if (line.find("[Inf_space_2 End]") != std::string::npos) {
+            isReadingInf2 = false;
+            continue;
+        }
+        // Check for Empty start
+        if (line.find("[Empty_space Begin]") != std::string::npos) {
+            isReadingBoards = false;
+            isReadingContains = false;
+            isReadingInf = false;
+            isReadingInf2 = false;
+            isReadingEmpty = true;
+            continue;
+        }
+        // Check for Empty end
+        if (line.find("[Empty_space End]") != std::string::npos) {
+            isReadingEmpty = false;
+            continue;
+        }
+
 
         // Read the current line into the appropriate data structure
         if (isReadingBoards) {
@@ -280,11 +359,42 @@ void GameBoard::initializeBoard(std::string filename) {
         }
         else if (isReadingContains) {
             std::istringstream iss(line);
-            int map, innerMap, row, col;
-            if (iss >> map >> innerMap >> row >> col) {
-                contains.emplace_back(map, innerMap, row, col, map);
+            int map, innerMap, row, col, father;
+            if (iss >> map >> innerMap >> row >> col >> father) {
+                contains.emplace_back(map, innerMap, row, col, father);
             }
         }
+        else if (isReadingInf) {
+            std::istringstream iss(line);
+            std::vector<std::string> row;
+            std::string cell;
+            while (iss >> cell) {
+                row.push_back(cell);
+            }
+            inf_space.clear();
+            inf_space.push_back(row);
+        }
+        else if (isReadingInf2) {
+            std::istringstream iss(line);
+            std::vector<std::string> row;
+            std::string cell;
+            while (iss >> cell) {
+                row.push_back(cell);
+            }
+            inf_space_2.clear();
+            inf_space_2.push_back(row);
+        }
+        else if (isReadingEmpty) {
+            std::istringstream iss(line);
+            std::vector<std::string> row;
+            std::string cell;
+            while (iss >> cell) {
+                row.push_back(cell);
+            }
+            empty_space.clear();
+            empty_space.push_back(row);
+        }
+
     }
     inFile.close();
 
@@ -304,6 +414,33 @@ void GameBoard::initializeBoard(std::string filename) {
                     checkRow = row;
                     checkCol = col;
                 }
+            }
+        }
+    }
+    for (int i = 0; i < 5; ++i) {
+        for (int j = 0; j < 5; ++j) {
+            if (inf_space[i][j] == "P") {
+                playerMap = -1;
+                playerRow = i;
+                playerCol = j;
+            }
+        }
+    }
+    for (int i = 0; i < 5; ++i) {
+        for (int j = 0; j < 5; ++j) {
+            if (inf_space_2[i][j] == "P") {
+                playerMap = -2;
+                playerRow = i;
+                playerCol = j;
+            }
+        }
+    }
+    for (int i = 0; i < 5; ++i) {
+        for (int j = 0; j < 5; ++j) {
+            if (empty_space[i][j] == "P") {
+                playerMap = -3;
+                playerRow = i;
+                playerCol = j;
             }
         }
     }
@@ -334,9 +471,41 @@ void GameBoard::saveGameToFile(const std::string& filename) {
         outFile << std::get<0>(contain) << " "
                 << std::get<1>(contain) << " "
                 << std::get<2>(contain) << " "
-                << std::get<3>(contain) << std::endl;
+                << std::get<3>(contain) << " "
+                << std::get<4>(contain) << std::endl;
     }
     outFile << "[Contains End]" << std::endl;
+
+    //保存inf_space信息
+    outFile << "[Inf_space Begin]" << std::endl;
+    for (const auto& row : inf_space) {
+        for (const auto& cell : row) {
+            outFile << cell << " ";
+        }
+        outFile << std::endl;
+    }
+    outFile << "[Inf_space End]" << std::endl;
+
+    //保存inf_space_2信息
+    outFile << "[Inf_space_2 Begin]" << std::endl;
+    for (const auto& row : inf_space_2) {
+        for (const auto& cell : row) {
+            outFile << cell << " ";
+        }
+        outFile << std::endl;
+    }
+    outFile << "[Inf_space_2 End]" << std::endl;
+    
+
+    //保存empty_space信息
+    outFile << "[Empty_space Begin]" << std::endl;
+    for (const auto& row : empty_space) {
+        for (const auto& cell : row) {
+            outFile << cell << " ";
+        }
+        outFile << std::endl;
+    }
+    outFile << "[Empty_space End]" << std::endl;
 
     outFile.close();
 }
@@ -1530,6 +1699,9 @@ void GameBoard::moveInternalBox(char direction, int oldMap, int oldRow, int oldC
 void GameBoard::movePlayer(char direction) {
     boards_old=boards;
     contains_old=contains;
+    inf_space_old=inf_space;
+    inf2_space_old=inf_space_2;
+    empty_space_old=empty_space;
     std::array<int,3>player_old={playerMap,playerRow,playerCol};
     player.push(player_old);
 
@@ -1853,7 +2025,76 @@ void GameBoard::getChange(){
     }else{
         isContainsChange.push(0);
     }
+    //inf
+    isChange=false;
+    for (int i = 0; i < inf_space.size(); i++)
+    {
+        for (int j = 0; j < inf_space[i].size(); j++)
+        {
+            if (inf_space_old[i][j]!=inf_space[i][j])
+            {
+                isChange=true;
+                inf_empty_before change = {i,j,inf_space_old[i][j]};
+                before_infempty_vector.push_back(change);
+            } 
+        }
+    }
+    if (isChange)
+    {
+        isInfChange.push(1);
+        infStack.push(before_infempty_vector);
+        before_infempty_vector.clear();
+    }else{
+        isInfChange.push(0);
+    }
+    //inf2
+    isChange=false;
+    for (int i = 0; i < inf_space_2.size(); i++)
+    {
+        for (int j = 0; j < inf_space_2[i].size(); j++)
+        {
+            if (inf2_space_old[i][j]!=inf_space_2[i][j])
+            {
+                isChange=true;
+                inf_empty_before change = {i,j,inf2_space_old[i][j]};
+                before_infempty_vector.push_back(change);
+            } 
+        }
+    }
+    if (isChange)
+    {
+        isInf2Change.push(1);
+        inf2Stack.push(before_infempty_vector);
+        before_infempty_vector.clear();
+    }else{
+        isInf2Change.push(0);
+    }
+    //empty
+    isChange=false;
+    for (int i = 0; i < empty_space.size(); i++)
+    {
+        for (int j = 0; j < empty_space[i].size(); j++)
+        {
+            if (empty_space_old[i][j]!=empty_space[i][j])
+            {
+                isChange=true;
+                inf_empty_before change = {i,j,empty_space_old[i][j]};
+                before_infempty_vector.push_back(change);
+            } 
+        }
+    }
+    if (isChange)
+    {
+        isEmptyChange.push(1);
+        emptyStack.push(before_infempty_vector);
+        before_infempty_vector.clear();
+    }else{
+        isEmptyChange.push(0);
+    }
 
+    inf_space_old=inf_space;
+    inf2_space_old=inf_space_2;
+    empty_space_old=empty_space;
     contains_old=contains;
     boards_old=boards;
 }
@@ -1870,6 +2111,12 @@ void GameBoard::undo(){
     isBoardsChange.pop();
     int iscontainschange=isContainsChange.top();
     isContainsChange.pop();
+    int isinfchange=isInfChange.top();
+    isInfChange.pop();
+    int isinf2change=isInf2Change.top();
+    isInf2Change.pop();
+    int isemptychange=isEmptyChange.top();
+    isEmptyChange.pop();
     if (isboardschange)
     {
         before_vector = boardsStack.top();
@@ -1887,6 +2134,42 @@ void GameBoard::undo(){
         contains.clear();
         contains=containsStack.top();
         containsStack.pop();
+    }
+
+    if (isinfchange)
+    {
+        before_infempty_vector = infStack.top();
+        infStack.pop();
+        inf_empty_before change;
+        for (int i = 0; i < before_infempty_vector.size(); i++)
+        {
+            change=before_infempty_vector[i];
+            inf_space[change.x][change.y]=change.value;
+        }
+    }
+
+    if (isinf2change)
+    {
+        before_infempty_vector = inf2Stack.top();
+        inf2Stack.pop();
+        inf_empty_before change;
+        for (int i = 0; i < before_infempty_vector.size(); i++)
+        {
+            change=before_infempty_vector[i];
+            inf_space_2[change.x][change.y]=change.value;
+        }
+    }
+
+    if (isemptychange)
+    {
+        before_infempty_vector = emptyStack.top();
+        emptyStack.pop();
+        inf_empty_before change;
+        for (int i = 0; i < before_infempty_vector.size(); i++)
+        {
+            change=before_infempty_vector[i];
+            empty_space[change.x][change.y]=change.value;
+        }
     }
 
     std::array<int,3>player_old=player.top();
