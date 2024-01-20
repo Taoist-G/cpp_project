@@ -165,12 +165,14 @@ void GameBoard::initializeBoard(int difficulty) {
             boards = boards1;
             contains.emplace_back(1,0,2,2,1);
             contains.emplace_back(0,1,2,2,0);
+            haveBasicMap=0;
             break;
         case 2:
             // Recursive Box
             boards = boards2;
             contains.emplace_back(0,1,1,1,0);
             contains.emplace_back(0,2,1,2,0);
+            haveBasicMap=0;
             break;
         case 3:
             // Greedy Snake
@@ -178,6 +180,7 @@ void GameBoard::initializeBoard(int difficulty) {
             contains.emplace_back(0,0,1,1,0);
             contains.emplace_back(0,1,1,3,0);
             contains.emplace_back(0,2,1,4,0);
+            haveBasicMap=0;
             break;
         case 4:
             // Multiple reference
@@ -187,11 +190,13 @@ void GameBoard::initializeBoard(int difficulty) {
             contains.emplace_back(2,0,1,2,3);
             contains.emplace_back(3,1,6,1,3);
             contains.emplace_back(3,2,1,4,3);
+            haveBasicMap=1;
             break;
         case 5:
             // Multiple infinite and multiple epsilon
             boards = boards5;
             contains.emplace_back(0,0,0,2,0);
+            haveBasicMap=0;
     }
 
     for (int i = 0; i < boards.size(); ++i) {
@@ -264,6 +269,7 @@ void GameBoard::initializeBoard(std::string filename) {
     bool isReadingInf = false;
     bool isReadingInf2 = false;
     bool isReadingEmpty = false;
+    bool isReadingBMap = false;
     std::vector<std::vector<std::string>> currentMap;
 
     while (getline(inFile, line)) {
@@ -274,6 +280,7 @@ void GameBoard::initializeBoard(std::string filename) {
             isReadingInf = false;
             isReadingInf2 = false;
             isReadingEmpty = false;
+            isReadingBMap = false;
             if (!currentMap.empty()) {
                 boards.push_back(currentMap);
                 currentMap.clear();
@@ -296,6 +303,7 @@ void GameBoard::initializeBoard(std::string filename) {
             isReadingInf = false;
             isReadingInf2 = false;
             isReadingEmpty = false;
+            isReadingBMap = false;
             continue;
         }
         // Check for contains end
@@ -310,6 +318,7 @@ void GameBoard::initializeBoard(std::string filename) {
             isReadingInf = true;
             isReadingInf2 = false;
             isReadingEmpty = false;
+            isReadingBMap = false;
             continue;
         }
         // Check for Inf end
@@ -324,6 +333,7 @@ void GameBoard::initializeBoard(std::string filename) {
             isReadingInf = false;
             isReadingInf2 = true;
             isReadingEmpty = false;
+            isReadingBMap = false;
             continue;
         }
         // Check for Inf_2 end
@@ -338,11 +348,27 @@ void GameBoard::initializeBoard(std::string filename) {
             isReadingInf = false;
             isReadingInf2 = false;
             isReadingEmpty = true;
+            isReadingBMap = false;
             continue;
         }
         // Check for Empty end
         if (line.find("[Empty_space End]") != std::string::npos) {
             isReadingEmpty = false;
+            continue;
+        }
+        // Check for Basic Map
+        if (line.find("[Basic Map]") != std::string::npos) {
+            isReadingBoards = false;
+            isReadingContains = false;
+            isReadingInf = false;
+            isReadingInf2 = false;
+            isReadingEmpty = false;
+            isReadingBMap = true;
+            continue;
+        }
+        // Check for Empty end
+        if (line.find("[Basic Map End]") != std::string::npos) {
+            isReadingBMap = false;
             continue;
         }
 
@@ -390,6 +416,11 @@ void GameBoard::initializeBoard(std::string filename) {
                 row.push_back(cell);
             }
             empty_space.push_back(row);
+        }
+        else if (isReadingBMap) {
+            std::istringstream iss(line);
+            int BMap;
+            haveBasicMap=BMap;
         }
 
     }
@@ -503,6 +534,11 @@ void GameBoard::saveGameToFile(const std::string& filename) {
         outFile << std::endl;
     }
     outFile << "[Empty_space End]" << std::endl;
+
+    //保存BMap信息
+    outFile << "[Basic Map]" << std::endl;
+    outFile << haveBasicMap << std::endl;
+    outFile << "[Basic Map End]" << std::endl;
 
     outFile.close();
 }
@@ -1727,7 +1763,7 @@ void GameBoard::movePlayer(char direction) {
     isValidMove = true;
     isEnter = false;
     isLeave = false;
-    if (playerMap != -1 && playerMap != -2) {
+    if (playerMap != -1 && playerMap != -2 &&playerMap!=-3) {
         // 检查玩家要移动的新位置是否合法
         if (newPlayerRow >= 0 && newPlayerRow < boards[newPlayerMap].size() &&
             newPlayerCol >= 0 && newPlayerCol < boards[newPlayerMap][0].size() &&
@@ -1865,19 +1901,41 @@ void GameBoard::printBoard(int difficulty) const {
     std::cout << "| B: Box            b: Box on storage point          |" << std::endl;
     std::cout << "| In: InternalBox   in: InternalBox on storage point |" << std::endl;
     std::cout << "| =: Checkpoint     -: Storage point                 |" << std::endl;
-    std::cout << "| #: Wall                                            |" << std::endl;
+    std::cout << "| #: Wall           X: Infinity space                |" << std::endl;
     std::cout << "| Game operator:                                     |" << std::endl;
     std::cout << "| R: Restart        Q: Quit(Back to menu)            |" << std::endl;
     std::cout << "| W/A/S/D: Move                                      |" << std::endl;
-    for (int map = 0; map < boards.size(); ++map) {
-        for (int i = 0; i < boards[map].size(); i++) {
-            for (int j = 0; j < boards[map][0].size(); j++) {
-                std::cout << boards[map][i][j] << " ";
+    std::cout << "| U: Undo            Z: Save game                    |" << std::endl;
+    if (!haveBasicMap)
+    {
+        for (int map = 0; map < boards.size(); ++map) {
+            std::cout<<"I"<<map+1<<":"<<std::endl;
+            for (int i = 0; i < boards[map].size(); i++) {
+                for (int j = 0; j < boards[map][0].size(); j++) {
+                    std::cout << boards[map][i][j] << " ";
+                }
+                std::cout << '\n';
             }
             std::cout << '\n';
         }
-        std::cout << '\n';
+    }else{
+        for (int map = 0; map < boards.size(); ++map) {
+            if(map!=boards.size()-1){
+                std::cout<<"I"<<map+1<<":"<<std::endl;
+            }else{
+                std::cout<<"Basic Map"<<":"<<std::endl;
+            }
+            for (int i = 0; i < boards[map].size(); i++) {
+                for (int j = 0; j < boards[map][0].size(); j++) {
+                    std::cout << boards[map][i][j] << " ";
+                }
+                std::cout << '\n';
+            }
+            std::cout << '\n';
+        }
     }
+    
+    
     if (playerMap == -1 || inf_space[2][2] != "."){
         std::cout << "infinity space" << std::endl;
         for (int i = 0; i < 5; ++i) {
@@ -1917,18 +1975,38 @@ void GameBoard::printBoard(std::string filename) const {
     std::cout << "| B: Box            b: Box on storage point          |" << std::endl;
     std::cout << "| In: InternalBox   in: InternalBox on storage point |" << std::endl;
     std::cout << "| =: Checkpoint     -: Storage point                 |" << std::endl;
-    std::cout << "| #: Wall                                            |" << std::endl;
+    std::cout << "| #: Wall           X: Infinity space                |" << std::endl;
     std::cout << "| Game operator:                                     |" << std::endl;
     std::cout << "| R: Restart        Q: Quit(Back to menu)            |" << std::endl;
     std::cout << "| W/A/S/D: Move                                      |" << std::endl;
-    for (int map = 0; map < boards.size(); ++map) {
-        for (int i = 0; i < boards[map].size(); i++) {
-            for (int j = 0; j < boards[map][0].size(); j++) {
-                std::cout << boards[map][i][j] << " ";
+    std::cout << "| U:Undo            Z:Save game                      |" << std::endl;
+    if (!haveBasicMap)
+    {
+        for (int map = 0; map < boards.size(); ++map) {
+            std::cout<<"I"<<map+1<<":"<<std::endl;
+            for (int i = 0; i < boards[map].size(); i++) {
+                for (int j = 0; j < boards[map][0].size(); j++) {
+                    std::cout << boards[map][i][j] << " ";
+                }
+                std::cout << '\n';
             }
             std::cout << '\n';
         }
-        std::cout << '\n';
+    }else{
+        for (int map = 0; map < boards.size(); ++map) {
+            if(map!=boards.size()-1){
+                std::cout<<"I"<<map+1<<":"<<std::endl;
+            }else{
+                std::cout<<"Basic Map"<<":"<<std::endl;
+            }
+            for (int i = 0; i < boards[map].size(); i++) {
+                for (int j = 0; j < boards[map][0].size(); j++) {
+                    std::cout << boards[map][i][j] << " ";
+                }
+                std::cout << '\n';
+            }
+            std::cout << '\n';
+        }
     }
     if (playerMap == -1 || inf_space[2][2] != "."){
         std::cout << "infinity space" << std::endl;

@@ -29,6 +29,7 @@ public:
 
 
 private:
+    int haveBasicMap;
     bool isValidMove;
     bool isEnter;
     bool isLeave;
