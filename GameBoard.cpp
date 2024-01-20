@@ -371,7 +371,6 @@ void GameBoard::initializeBoard(std::string filename) {
             while (iss >> cell) {
                 row.push_back(cell);
             }
-            inf_space.clear();
             inf_space.push_back(row);
         }
         else if (isReadingInf2) {
@@ -381,7 +380,6 @@ void GameBoard::initializeBoard(std::string filename) {
             while (iss >> cell) {
                 row.push_back(cell);
             }
-            inf_space_2.clear();
             inf_space_2.push_back(row);
         }
         else if (isReadingEmpty) {
@@ -391,7 +389,6 @@ void GameBoard::initializeBoard(std::string filename) {
             while (iss >> cell) {
                 row.push_back(cell);
             }
-            empty_space.clear();
             empty_space.push_back(row);
         }
 
