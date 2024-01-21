@@ -1,0 +1,42 @@
+[Map 1]
+# # # # # 
+# . . = # 
+# . I2 . . 
+# P . . # 
+# # # # # 
+[Map End]
+[Map 2]
+# # # # # 
+# . . . # 
+. . I1 . # 
+# . B - # 
+# # # # # 
+[Map End]
+[Contains]
+1 0 2 2 1
+0 1 2 2 0
+[Contains End]
+[Inf_space Begin]
+. . . . . 
+. . . . . 
+. . . . . 
+. . . . . 
+. . . . . 
+[Inf_space End]
+[Inf_space_2 Begin]
+. . . . . 
+. . . . . 
+. . . . . 
+. . . . . 
+. . . . . 
+[Inf_space_2 End]
+[Empty_space Begin]
+. . . . . 
+. . . . . 
+. . . . . 
+. . . . . 
+. . . . . 
+[Empty_space End]
+[Basic Map]
+0
+[Basic Map End]

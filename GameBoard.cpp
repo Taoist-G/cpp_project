@@ -2,11 +2,11 @@
 #include <iostream>
 #include <fstream>
 #include <sstream>
-
 GameBoard::GameBoard(int difficulty) {
     isValidMove = true;
     isEnter = false;
     isLeave = false;
+    this->difficulty=difficulty;
     initializeBoard(difficulty);
 }
 
@@ -14,6 +14,7 @@ GameBoard::GameBoard(std::string filename) {
     isValidMove = true;
     isEnter = false;
     isLeave = false;
+    this->filename=filename;
     initializeBoard(filename);
 }
 
@@ -2253,4 +2254,27 @@ void GameBoard::undo(){
     playerRow = player_old[1];
     playerCol = player_old[2];
 }
-
+int GameBoard::getDifficulty(){
+    return difficulty;
+}
+std::string GameBoard::get_filename(){
+    return filename;
+}
+std::vector<std::vector<std::vector<std::string>>> GameBoard::getBoards(){
+    return boards;
+}
+std::vector<std::vector<std::string>> GameBoard::get_empty_space(){
+    return empty_space;
+}
+std::vector<std::vector<std::string>> GameBoard::get_inf_space(){
+    return inf_space;
+}
+std::vector<std::vector<std::string>> GameBoard::get_inf_space2(){
+    return inf_space_2;
+}
+void  GameBoard::set_filename(std::string filename){
+    this->filename=filename;
+}
+void GameBoard::set_difficulty(int n){
+    this->difficulty=n;
+}
