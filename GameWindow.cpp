@@ -7,26 +7,25 @@
 #include <iostream>
 GameWindow::GameWindow(int W, int H, const char* title, GameBoard& gb)
     : Fl_Window(W, H, title), gameBoard(gb) {
-    updateGameGUI();
 }
 
 void GameWindow::updateGameGUI() {
     this->clear();
     // 清除现有的小部件
-//    gameBoard.printBoard(gameBoard.getDifficulty());
     int cellWidth = 100;
     int cellHeight = 100;
     // 假设地图渲染区域的宽度为 mapWidth
     int mapWidth = 900; // 假设所有行的列数相同
     // 设置提示文本的位置和尺寸
     int x_pos = mapWidth + 20; // 地图右侧的起始位置
-    int y_pos = 200;            // 顶部开始的位置
+    int y_pos = 250;            // 顶部开始的位置
     int textWidth = 300;       // 文本框的宽度
     int textHeight = 30;       // 文本框的高度
     // 添加提示文本
-    Fl_Box *moveText = new Fl_Box(x_pos, y_pos, textWidth, textHeight, "W/A/S/D: Move\n\n\n\nR: Restart\n\n\n\nQ: Quit\n\n\n\nU: Undo\n\n\n\nZ: Save Progress\n\n\n\n1~9: Check Inner Box");
+    Fl_Box *moveText = new Fl_Box(x_pos, y_pos, textWidth, textHeight, "W/A/S/D: Move\n\nR: Restart\n\nQ: Quit\n\nU: Undo\n\nZ: Save Progress\n\n1~9: Check Inner Box & Basic Map");
+    moveText->labelsize(25); 
     this->add(moveText);
-    
+
     x_pos=20;y_pos=20;
     if ( gameBoard.playerMap >=0) {
         displayBoard(gameBoard.getBoards()[gameBoard.playerMap], x_pos, y_pos, cellWidth, cellHeight,currentWindow,gameBoard.playerMap);
@@ -124,6 +123,7 @@ int GameWindow::handle(int event) {
             if (currentWindow) {
                 currentWindow->clear();
                 delete currentWindow;
+                currentWindow = nullptr;
             }
             // gameBoard.set_filename(nullptr);
             
@@ -137,24 +137,37 @@ int GameWindow::handle(int event) {
     return Fl_Window::handle(event);
 }
 void GameWindow::displayBoard(const std::vector<std::vector<std::string>>& board, int x_pos, int y_pos, int cellWidth, int cellHeight, Fl_Window* window, int boardIndex) {
-    std::string windowTitle;
+    Fl_Box* titleBox;
     if (gameBoard.haveBasicMap && boardIndex == gameBoard.getBoards().size() - 1) {
-        windowTitle = "Basic Map";
-    } else if (boardIndex >= 0 && boardIndex < gameBoard.getBoards().size()) {
-        windowTitle = "I" + std::to_string(boardIndex + 1);
+        titleBox = new Fl_Box(1000, 10, 300, 30, "Current State: Basic Map");
+    } else if (boardIndex == 0) {
+        titleBox = new Fl_Box(1000, 10, 300, 30, "Current State: Inner Box 1");
+    } else if (boardIndex == 1) {
+        titleBox = new Fl_Box(1000, 10, 300, 30, "Current State: Inner Box 2");
+    } else if (boardIndex == 2) {
+        titleBox = new Fl_Box(1000, 10, 300, 30, "Current State: Inner Box 3");
+    } else if (boardIndex == 3) {
+        titleBox = new Fl_Box(1000, 10, 300, 30, "Current State: Inner Box 4");
+    } else if (boardIndex == 4) {
+        titleBox = new Fl_Box(1000, 10, 300, 30, "Current State: Inner Box 5");
+    } else if (boardIndex == 5) {
+        titleBox = new Fl_Box(1000, 10, 300, 30, "Current State: Inner Box 6");
+    } else if (boardIndex == 6) {
+        titleBox = new Fl_Box(1000, 10, 300, 30, "Current State: Inner Box 7");
+    } else if (boardIndex == 7) {
+        titleBox = new Fl_Box(1000, 10, 300, 30, "Current State: Inner Box 8");
+    } else if (boardIndex == 8) {
+        titleBox = new Fl_Box(1000, 10, 300, 30, "Current State: Inner Box 9");
     } else if (boardIndex == -1) {
-        windowTitle = "Inf Space 1";
+        titleBox = new Fl_Box(1000, 10, 300, 30, "Current State: Inf Space 1");
     } else if (boardIndex == -2) { 
-        windowTitle = "Inf Space 2";
+        titleBox = new Fl_Box(1000, 10, 300, 30, "Current State: Inf Space 2");
     } else if (boardIndex == -3) { 
-        windowTitle = "Empty Space";
+        titleBox = new Fl_Box(1000, 10, 300, 30, "Current State: Empty Space");
     }
-
-    // 创建一个Fl_Box来显示windowTitle
-    Fl_Box* titleBox = new Fl_Box(x_pos, (board.size() * cellHeight) + y_pos, window->w(), 20, windowTitle.c_str());
-    titleBox->box(FL_FLAT_BOX);
     titleBox->labelfont(FL_BOLD);
-    titleBox->labelsize(14);
+    titleBox->labelsize(25);
+    this->add(titleBox);
 
     for (size_t i = 0; i < board.size(); ++i) {
         for (size_t j = 0; j < board[i].size(); ++j) {

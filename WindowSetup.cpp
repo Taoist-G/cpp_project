@@ -10,20 +10,20 @@ void setupHomePage() {
     currentWindow = new Fl_Window(1600, 1200, "Welcome to Sokoban!");
 
     // 设置标题
-    Fl_Box* title_box = new Fl_Box(400, 200, 400, 100, "Sokoban");
+    Fl_Box* title_box = new Fl_Box(90, 150, 1450, 200, "Sokoban");
     title_box->box(FL_NO_BOX);
     title_box->labelfont(FL_BOLD + FL_ITALIC);
-    title_box->labelsize(48);
+    title_box->labelsize(96);
     title_box->labeltype(FL_NORMAL_LABEL);
 
     // 添加按钮
-    Fl_Button* start_button = new Fl_Button(650, 600, 200, 50, "Start");
+    Fl_Button* start_button = new Fl_Button(700, 500, 200, 50, "Start");
     start_button->callback(startGame);
 
-    Fl_Button* load_button = new Fl_Button(650, 700, 200, 50, "Load");
+    Fl_Button* load_button = new Fl_Button(700, 700, 200, 50, "Load");
     load_button->callback(loadGame);
 
-    Fl_Button* exit_button = new Fl_Button(650, 800, 200, 50, "Exit");
+    Fl_Button* exit_button = new Fl_Button(700, 900, 200, 50, "Exit");
     exit_button->callback(exit_callback);
 
     currentWindow->end();
@@ -115,17 +115,13 @@ void backToStart(Fl_Widget*, void*) {
 
 void playGame(int difficulty) {
     if (currentWindow) {
-        currentWindow->hide();
+        currentWindow->clear();
         delete currentWindow;
     }
-
     GameBoard game(difficulty);
     std::vector<std::vector<std::vector<std::string>>> gameboard = game.getBoards();
     currentWindow = new GameWindow(1600, 1200, "Game Board", game);
-
-    // 强制转换 currentWindow 为 GameWindow 类型，并调用 updateGameGUI 方法
     static_cast<GameWindow*>(currentWindow)->updateGameGUI();
-
     currentWindow->end();
     currentWindow->show();
 }
@@ -139,7 +135,6 @@ void playGame(std::string filename) {
     game.set_filename(filename);
     std::vector<std::vector<std::vector<std::string>>> gameboard = game.getBoards();
     currentWindow = new GameWindow(1600, 1200, "Game Board", game);
-
     static_cast<GameWindow*>(currentWindow)->updateGameGUI();
     currentWindow->end();
     currentWindow->show();

@@ -23,7 +23,6 @@ public:
     void printBoard(int difficulty) const;
     void printBoard(std::string filename) const;
     void saveGameToFile(const std::string& filename);
-    void loadGameFromFile(const std::string& filename);
     void undo();
     void getChange();
     int getDifficulty();
@@ -38,7 +37,6 @@ public:
     int playerMap;
 
 private:
-    // int haveBasicMap;
      bool isValidMove;
      bool isEnter;
      bool isLeave;
@@ -46,7 +44,6 @@ private:
     int difficulty;
     std::string filename;
     //用于game的restart
-    //
     std::vector<std::string> mapNames;
     std::vector<std::vector<std::vector<std::string>>> boards;
     std::vector<std::vector<std::string>> empty_space;
